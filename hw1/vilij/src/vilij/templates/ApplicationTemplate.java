@@ -1,6 +1,8 @@
 package vilij.templates;
 
 import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import vilij.components.*;
 import vilij.propertymanager.PropertyManager;
@@ -31,6 +33,9 @@ public class ApplicationTemplate extends Application {
         dialogsAudit(primaryStage);
         if (propertyAudit())
             userInterfaceAudit(primaryStage);
+
+        HBox hbox = new HBox(20);
+
     }
 
     protected void dialogsAudit(Stage primaryStage) {
