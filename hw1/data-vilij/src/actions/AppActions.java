@@ -45,7 +45,7 @@ public final class AppActions implements ActionComponent {
     public void handleNewRequest() {
         // TODO for homework 1
         try {
-            if (promptToSave() && dataFilePath != null)
+            if (promptToSave())
                 applicationTemplate.getUIComponent().clear();
         } catch (IOException e) {
         }

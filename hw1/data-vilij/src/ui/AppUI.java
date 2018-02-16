@@ -169,6 +169,9 @@ public final class AppUI extends UITemplate {
 
     private void setWorkspaceActions() {
         // TODO for homework 1
-        displayButton.setOnAction(action -> ((AppData) applicationTemplate.getDataComponent()).loadData(textArea.getText()));
+        displayButton.setOnAction(action -> {
+            chart.getData().clear();
+            ((AppData) applicationTemplate.getDataComponent()).loadData(textArea.getText());
+        });
     }
 }
