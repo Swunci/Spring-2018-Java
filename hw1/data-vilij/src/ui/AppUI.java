@@ -142,11 +142,17 @@ public final class AppUI extends UITemplate {
         textArea.textProperty().addListener((observable, oldValue, newValue) -> {
             try {
                 if (!newValue.equals(oldValue)) {
-                    ((AppActions) applicationTemplate.getActionComponent()).setIsUnsavedProperty(true);
-                    if (newValue.charAt(newValue.length() - 1) == '\n' || newValue.isEmpty())
+                    if (!newValue.isEmpty()) {
+                        ((AppActions) applicationTemplate.getActionComponent()).setIsUnsavedProperty(true);
+                        if (newValue.charAt(newValue.length() - 1) == '\n')
+                            hasNewText = true;
+                        newButton.setDisable(false);
+                        saveButton.setDisable(false);
+                    } else {
                         hasNewText = true;
-                    newButton.setDisable(false);
-                    saveButton.setDisable(false);
+                        newButton.setDisable(true);
+                        saveButton.setDisable(true);
+                    }
                 }
             } catch (IndexOutOfBoundsException e) {
                 System.err.println(newValue);
