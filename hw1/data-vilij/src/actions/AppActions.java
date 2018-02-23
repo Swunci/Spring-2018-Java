@@ -18,8 +18,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
 
-import static java.io.File.separator;
 import static vilij.settings.PropertyTypes.SAVE_WORK_TITLE;
+import static vilij.templates.UITemplate.SEPARATOR;
 
 /**
  * This is the concrete implementation of the action handlers required by the application.
@@ -106,7 +106,7 @@ public final class AppActions implements ActionComponent {
         if (dialog.getSelectedOption().equals(ConfirmationDialog.Option.YES)) {
             if (dataFilePath == null) {
                 FileChooser fileChooser = new FileChooser();
-                String      dataDirPath = separator + manager.getPropertyValue(AppPropertyTypes.DATA_RESOURCE_PATH.name());
+                String      dataDirPath = SEPARATOR + manager.getPropertyValue(AppPropertyTypes.DATA_RESOURCE_PATH.name());
                 URL         dataDirURL  = getClass().getResource(dataDirPath);
 
                 if (dataDirURL == null)
