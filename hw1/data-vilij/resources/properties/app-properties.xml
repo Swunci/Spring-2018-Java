@@ -5,7 +5,7 @@ functionality within the main workspace. -->
 <properties>
     <property_list>
         <!-- RESOURCE FILES AND FOLDERS -->
-        <property name="DATA_RESOURCE_PATH" value="./data-vilij/resources/data"/>
+        <property name="DATA_RESOURCE_PATH" value="data"/>
 
         <!-- USER INTERFACE ICON FILES -->
         <property name="SCREENSHOT_ICON" value="screenshot.png"/>
@@ -19,21 +19,32 @@ functionality within the main workspace. -->
 
         <!-- ERROR MESSAGES -->
         <property name="RESOURCE_SUBDIR_NOT_FOUND" value="Directory not found under resources."/>
-        <property name="INVALID_DATA" value="Invalid data"/>
 
         <!-- APPLICATION-SPECIFIC MESSAGE TITLES -->
         <property name="SAVE_UNSAVED_WORK_TITLE" value="Save Current Work"/>
-        <property name="CHART_TITLE" value="Data Visualization"/>
-        <property name="DISPLAY_TEXT" value="Display"/>
 
         <!-- APPLICATION-SPECIFIC MESSAGES -->
         <property name="SAVE_UNSAVED_WORK" value="Would you like to save current work?"/>
 
         <!-- APPLICATION-SPECIFIC PARAMETERS -->
-        <property name="DATA_FILE_EXT" value=".tsd"/>
+        <property name="DATA_FILE_EXT" value="tsd"/>
         <property name="DATA_FILE_EXT_DESC" value="Tab-Separated Data File"/>
-        <property name="TEXT_AREA" value="Data File"/>
+        <property name="TEXT_AREA" value="text area"/>
         <property name="SPECIFIED_FILE" value=" specified file"/>
+        <property name="CHART_TITLE" value="Data Visualization"/>
+        <property name="DISPLAY_TEXT" value="Display"/>
+        <property name="LEFT_VBOX_TITLE" value="Data File"/>
+        <property name="LEFT_VBOX_TITLE_FONT" value ="Arial"/>
+        <property name="LEFT_VBOX_TITLE_SIZE" value ="18"/>
+        <property name="ERROR_LINE" value="Error at line "/>
+        <property name="DUPLICATE_NAME" value="Duplicate name at line "/>
+        <property name="CONFIRMATION" value="Confirmation"/>
+        <property name="CONFIRMATION_MSG_PART1" value="Loaded data consists of "/>
+        <property name="CONFIRMATION_MSG_PART2" value=" lines. Showing only the first 10 in the text area."/>
+        <property name="SAVE_IMAGE_TITLE" value="Save Image"/>
+        <property name="SAVE_FILE_EXT_DESC" value="PNG file"/>
+        <property name="SAVE_IMAGE_FILE_EXT" value="png"/>
+
 
     </property_list>
     <property_options_list/>

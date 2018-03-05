@@ -24,7 +24,7 @@ import static vilij.settings.PropertyTypes.*;
  */
 public class UITemplate implements UIComponent {
 
-    private static final String SEPARATOR = "/";
+    public static final String SEPARATOR = "/";
     private static final String UI_NOT_INITIALIZABLE_FOR_TEMPLATES = "The graphical user interface cannot be " +
                                                                      "initialized at template-level. A child " +
                                                                      "class must be implemented.";
@@ -87,7 +87,7 @@ public class UITemplate implements UIComponent {
 
     protected void setToolBar(ApplicationTemplate applicationTemplate) {
         PropertyManager manager = applicationTemplate.manager;
-        newButton = setToolbarButton(newiconPath, manager.getPropertyValue(NEW_TOOLTIP.name()), false);
+        newButton = setToolbarButton(newiconPath, manager.getPropertyValue(NEW_TOOLTIP.name()), true);
         saveButton = setToolbarButton(saveiconPath, manager.getPropertyValue(SAVE_TOOLTIP.name()), true);
         loadButton = setToolbarButton(loadiconPath, manager.getPropertyValue(LOAD_TOOLTIP.name()), false);
         printButton = setToolbarButton(printiconPath, manager.getPropertyValue(PRINT_TOOLTIP.name()), true);

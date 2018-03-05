@@ -1,7 +1,19 @@
 package dataprocessors;
 
+import javafx.event.EventHandler;
 import javafx.geometry.Point2D;
+import javafx.scene.Cursor;
+import javafx.scene.Node;
 import javafx.scene.chart.XYChart;
+import javafx.scene.control.Tooltip;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.StackPane;
+import settings.AppPropertyTypes;
+import ui.AppUI;
+import vilij.components.Dialog;
+import vilij.components.ErrorDialog;
+import vilij.propertymanager.PropertyManager;
+import vilij.settings.PropertyTypes;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,6 +42,9 @@ public final class TSDProcessor {
 
     private Map<String, String>  dataLabels;
     private Map<String, Point2D> dataPoints;
+    private double yTotal, xMin, xMax;
+    private int counter = 0;
+
 
     public TSDProcessor() {
         dataLabels = new HashMap<>();
@@ -71,15 +86,73 @@ public final class TSDProcessor {
      * @param chart the specified chart
      */
     void toChartData(XYChart<Number, Number> chart) {
+        yTotal = 0;
+        counter = 0;
         Set<String> labels = new HashSet<>(dataLabels.values());
         for (String label : labels) {
             XYChart.Series<Number, Number> series = new XYChart.Series<>();
             series.setName(label);
             dataLabels.entrySet().stream().filter(entry -> entry.getValue().equals(label)).forEach(entry -> {
                 Point2D point = dataPoints.get(entry.getKey());
-                series.getData().add(new XYChart.Data<>(point.getX(), point.getY()));
+
+                XYChart.Data<Number, Number> seriesData = new XYChart.Data<>(point.getX(), point.getY());
+                seriesData.setNode(new HoverNode(entry.getKey()));
+                series.getData().add(seriesData);
+
+                yTotal += point.getY();
+                if (counter == 0) {
+                    xMax = point.getX();
+                    xMin = point.getY();
+                } else {
+                    if (point.getX() > xMax)
+                        xMax = point.getX();
+                    if (point.getX() < xMin)
+                        xMin = point.getX();
+                }
+                counter++;
             });
             chart.getData().add(series);
+            Node line = series.getNode().lookup(".chart-series-line");
+            line.setStyle("-fx-stroke: transparent;");
+        }
+        if (counter > 0) {
+            double yAverage = yTotal / (double) counter;
+            XYChart.Series<Number, Number> average = new XYChart.Series<>();
+            average.setName("Average y-value");
+            if (xMin == xMax) {
+                xMin -= xMin / 2.0;
+                xMax += xMax / 2.0;
+            }
+            average.getData().add(new XYChart.Data<>(xMin, yAverage));
+            average.getData().add(new XYChart.Data<>(xMax, yAverage));
+            chart.getData().add(average);
+            average.getNode().toBack();
+            for (XYChart.Data<Number, Number> data : average.getData()) {
+                StackPane nodes = (StackPane) data.getNode();
+                nodes.setVisible(false);
+            }
+        }
+    }
+
+    class HoverNode extends StackPane {          //node structure and action for data points
+        HoverNode(String name) {
+            Tooltip label = new Tooltip(name);
+
+            setOnMouseEntered(new EventHandler<MouseEvent>() {
+                @Override
+                public void handle(MouseEvent mouseEvent) {
+                    Node node = (Node) mouseEvent.getSource();
+                    Tooltip.install(node, label);
+                    setCursor(Cursor.CROSSHAIR);
+                    toFront();
+                }
+            });
+            setOnMouseExited(new EventHandler<MouseEvent>() {
+                @Override
+                public void handle(MouseEvent mouseEvent) {
+                    getChildren().clear();
+                }
+            });
         }
     }
 
