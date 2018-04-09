@@ -2,15 +2,20 @@ package ui;
 
 import actions.AppActions;
 import dataprocessors.AppData;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
-import javafx.scene.chart.ScatterChart;
 import javafx.scene.control.Button;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.ToolBar;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -20,8 +25,10 @@ import vilij.propertymanager.PropertyManager;
 import vilij.templates.ApplicationTemplate;
 import vilij.templates.UITemplate;
 
-import static vilij.settings.PropertyTypes.GUI_RESOURCE_PATH;
-import static vilij.settings.PropertyTypes.ICONS_RESOURCE_PATH;
+import java.util.ArrayList;
+
+import static settings.AppPropertyTypes.*;
+import static vilij.settings.PropertyTypes.*;
 
 /**
  * This is the application's user interface implementation.
@@ -34,13 +41,29 @@ public final class AppUI extends UITemplate {
     ApplicationTemplate applicationTemplate;
 
     @SuppressWarnings("FieldCanBeLocal")
-    private Button                       scrnshotButton; // toolbar button to take a screenshot of the data
-    private ScatterChart<Number, Number> chart;          // the chart where data will be displayed
-    private Button                       displayButton;  // workspace button to display data on the chart
-    private TextArea                     textArea;       // text area for new data input
-    private boolean                      hasNewText;     // whether or not the text area has any new data since last display
+    private Button                       scrnshotButton;                // toolbar button to take a screenshot of the data
+    private Button                       displayButton;                 // workspace button to display data on the chart
+    private Button                       doneEditButton;
+    private Button                       runButton;
+    private ChoiceBox                    algorithmTypes;
+    private Text                         informationText;
+    private TextArea                     textArea;                      // text area for new data input
+    private boolean                      hasNewText;                    // whether or not the text area has any new data since last display
+    private LineChart<Number, Number>    chart;                         // the chart where data will be displayed
+    private VBox                         leftPane;
+    private ObservableList<String>       choices;
 
-    public ScatterChart<Number, Number> getChart() { return chart; }
+    public ChoiceBox getAlgorithmTypes() { return algorithmTypes; }
+    public Text getInformationText() { return informationText; }
+    public TextArea getTextArea() { return textArea; }
+    public LineChart<Number, Number> getChart() { return chart; }
+
+    public void disableNewButton(boolean value) { newButton.setDisable(value);}
+    public void disableSaveButton(boolean value) { saveButton.setDisable(value); }
+    public void disableScrnshotButton(boolean value) { scrnshotButton.setDisable(value); }
+    public void disableDoneEditButton(boolean value) { doneEditButton.setDisable(value); }
+    public void setAlgorithmTypes(ChoiceBox choices) { algorithmTypes = choices; }
+    public void setInformationText(String information) { informationText.setText(information); }
 
     public AppUI(Stage primaryStage, ApplicationTemplate applicationTemplate) {
         super(primaryStage, applicationTemplate);
@@ -54,8 +77,11 @@ public final class AppUI extends UITemplate {
 
     @Override
     protected void setToolBar(ApplicationTemplate applicationTemplate) {
-        super.setToolBar(applicationTemplate);
         PropertyManager manager = applicationTemplate.manager;
+        newButton = setToolbarButton(newiconPath, manager.getPropertyValue(NEW_TOOLTIP.name()), false);
+        saveButton = setToolbarButton(saveiconPath, manager.getPropertyValue(SAVE_TOOLTIP.name()), true);
+        loadButton = setToolbarButton(loadiconPath, manager.getPropertyValue(LOAD_TOOLTIP.name()), false);
+        exitButton = setToolbarButton(exiticonPath, manager.getPropertyValue(EXIT_TOOLTIP.name()), false);
         String iconsPath = SEPARATOR + String.join(SEPARATOR,
                                                    manager.getPropertyValue(GUI_RESOURCE_PATH.name()),
                                                    manager.getPropertyValue(ICONS_RESOURCE_PATH.name()));
@@ -65,7 +91,7 @@ public final class AppUI extends UITemplate {
         scrnshotButton = setToolbarButton(scrnshoticonPath,
                                           manager.getPropertyValue(AppPropertyTypes.SCREENSHOT_TOOLTIP.name()),
                                           true);
-        toolBar.getItems().add(scrnshotButton);
+        toolBar = new ToolBar(newButton, saveButton, loadButton, scrnshotButton, exitButton);
     }
 
     @Override
@@ -75,7 +101,6 @@ public final class AppUI extends UITemplate {
         saveButton.setOnAction(e -> applicationTemplate.getActionComponent().handleSaveRequest());
         loadButton.setOnAction(e -> applicationTemplate.getActionComponent().handleLoadRequest());
         exitButton.setOnAction(e -> applicationTemplate.getActionComponent().handleExitRequest());
-        printButton.setOnAction(e -> applicationTemplate.getActionComponent().handlePrintRequest());
     }
 
     @Override
@@ -96,46 +121,97 @@ public final class AppUI extends UITemplate {
         PropertyManager manager = applicationTemplate.manager;
         NumberAxis      xAxis   = new NumberAxis();
         NumberAxis      yAxis   = new NumberAxis();
-        chart = new ScatterChart<>(xAxis, yAxis);
-        chart.setTitle(manager.getPropertyValue(AppPropertyTypes.CHART_TITLE.name()));
-
-        VBox leftPanel = new VBox(8);
-        leftPanel.setAlignment(Pos.TOP_CENTER);
-        leftPanel.setPadding(new Insets(10));
-
-        VBox.setVgrow(leftPanel, Priority.ALWAYS);
-        leftPanel.setMaxSize(windowWidth * 0.29, windowHeight * 0.3);
-        leftPanel.setMinSize(windowWidth * 0.29, windowHeight * 0.3);
-
-        Text   leftPanelTitle = new Text(manager.getPropertyValue(AppPropertyTypes.LEFT_PANE_TITLE.name()));
-        String fontname       = manager.getPropertyValue(AppPropertyTypes.LEFT_PANE_TITLEFONT.name());
-        Double fontsize       = Double.parseDouble(manager.getPropertyValue(AppPropertyTypes.LEFT_PANE_TITLESIZE.name()));
-        leftPanelTitle.setFont(Font.font(fontname, fontsize));
+        chart = new LineChart<>(xAxis, yAxis);
+        chart.setTitle(manager.getPropertyValue(CHART_TITLE.name()));
 
         textArea = new TextArea();
+        textArea.setPrefSize(240, 190);
+        chart.setPrefSize(700, 550);
+        informationText = new Text();
+        displayButton = new Button(manager.getPropertyValue(DISPLAY_TEXT.name()));
+        doneEditButton = new Button(manager.getPropertyValue(DONE_BUTTON_TEXT.name()));
+        runButton = new Button(manager.getPropertyValue(RUN_BUTTON_TEXT.name()));
+        leftPane = new VBox();
 
-        HBox processButtonsBox = new HBox();
-        displayButton = new Button(manager.getPropertyValue(AppPropertyTypes.DISPLAY_BUTTON_TEXT.name()));
-        HBox.setHgrow(processButtonsBox, Priority.ALWAYS);
-        processButtonsBox.getChildren().add(displayButton);
+        VBox informationPane = new VBox();
+        VBox algorithmTypePane = new VBox();
+        VBox selectionPane = new VBox();
+        VBox rightPane = new VBox();
+        HBox mainPane = new HBox();
 
-        leftPanel.getChildren().addAll(leftPanelTitle, textArea, processButtonsBox);
+        Text leftPaneTitle = new Text(manager.getPropertyValue(LEFT_PANE_TITLE.name()));
+        String fontName = manager.getPropertyValue(LEFT_PANE_TITLE_FONT.name());
+        Double fontSize = Double.parseDouble(manager.getPropertyValue(LEFT_PANE_TITLE_SIZE.name()));
+        leftPaneTitle.setFont(Font.font(fontName, fontSize));
 
-        StackPane rightPanel = new StackPane(chart);
-        rightPanel.setMaxSize(windowWidth * 0.69, windowHeight * 0.69);
-        rightPanel.setMinSize(windowWidth * 0.69, windowHeight * 0.69);
-        StackPane.setAlignment(rightPanel, Pos.CENTER);
+        leftPane.setAlignment(Pos.TOP_CENTER);
+        leftPane.getChildren().addAll(leftPaneTitle, textArea, doneEditButton, informationPane, algorithmTypePane, selectionPane);
+        leftPane.setPadding(new Insets(20));
+        leftPane.setSpacing(5);
 
-        workspace = new HBox(leftPanel, rightPanel);
-        HBox.setHgrow(workspace, Priority.ALWAYS);
+        informationPane.getChildren().add(informationText);
+        informationText.wrappingWidthProperty().bind(textArea.widthProperty());
 
-        appPane.getChildren().add(workspace);
-        VBox.setVgrow(appPane, Priority.ALWAYS);
+        Text algorithmTypePaneText = new Text(manager.getPropertyValue(ALGORITHM_TYPE_PANE_TITLE.name()));
+        String algorithmTypePaneFont = manager.getPropertyValue(ALGORITHM_TYPE_PANE_FONT.name());
+        Double algorithmTypePaneFontSize = Double.parseDouble(manager.getPropertyValue(ALGORITHM_TYPE_PANE_FONT_SIZE.name()));
+        algorithmTypePaneText.setFont(Font.font(algorithmTypePaneFont, algorithmTypePaneFontSize));
+
+        choices = FXCollections.observableArrayList("Classification", "Clustering");
+        algorithmTypes = new ChoiceBox(choices);
+        algorithmTypes.setDisable(true);
+        setAlgorithmTypes(algorithmTypes);
+        algorithmTypePane.getChildren().addAll(algorithmTypePaneText, algorithmTypes);
+        algorithmTypePane.setAlignment(Pos.CENTER);
+        algorithmTypePane.setSpacing(5);
+
+        selectionPane.setAlignment(Pos.CENTER);
+        selectionPane.setSpacing(5);
+
+        rightPane.setAlignment(Pos.CENTER);
+        rightPane.getChildren().addAll(chart);
+
+        leftPane.setVisible(false);
+        mainPane.getChildren().addAll(leftPane, rightPane);
+        appPane.getChildren().add(mainPane);
+    }
+
+    public void displayLeftPane() {
+        leftPane.setVisible(true);
+        newButton.setDisable(true);
+    }
+
+    public void enableAlgorithmTypes(boolean value) {
+        algorithmTypes.valueProperty().set(null);
+        algorithmTypes.setDisable(!value);
+    }
+
+    public void loadDataInformation(int numInstances, int numLabels, ArrayList<String> labelNames, String dataFilePath) {
+        String text = numInstances + " instances with " + numLabels + " labels loaded from " + dataFilePath + "\n The labels are:";
+        for (String labelName: labelNames) {
+            text += "\n- " + labelName;
+        }
+        setInformationText(text);
+    }
+
+    private void setAlgorithmTypesActions() {
+        getAlgorithmTypes().getSelectionModel().selectedIndexProperty().addListener(new ChangeListener<Number>() {
+            public void changed(ObservableValue ov, Number value, Number new_value) {
+                if (new_value.intValue() == 0) {
+                    // TODO: Classification Algorithms UI
+                }
+                else {
+                    // TODO: Clustering Algorithms UI
+                }
+            }
+        });
     }
 
     private void setWorkspaceActions() {
         setTextAreaActions();
         setDisplayButtonActions();
+        setDoneEditButtonActions();
+        setRunButtonActions();
     }
 
     private void setTextAreaActions() {
@@ -175,5 +251,41 @@ public final class AppUI extends UITemplate {
 
             }
         });
+    }
+
+    private void setDoneEditButtonActions() {
+        doneEditButton.setOnAction(event -> {
+            PropertyManager manager = applicationTemplate.manager;
+            if (doneEditButton.getText().equals(manager.getPropertyValue(EDIT_BUTTON_TEXT.name()))) {
+                doneEditButton.setText(manager.getPropertyValue(DONE_BUTTON_TEXT.name()));
+                disableTextArea(false);
+            }
+            else if (doneEditButton.getText().equals(manager.getPropertyValue(DONE_BUTTON_TEXT.name()))) {
+                String[] strings = textArea.getText().split("\n");
+                ArrayList<String> data = new ArrayList<>();
+                for (String string: strings) {
+                    data.add(string);
+                }
+                // TODO: Check if textArea data is valid
+                doneEditButton.setText(manager.getPropertyValue(EDIT_BUTTON_TEXT.name()));
+                disableTextArea(true);
+            }
+        });
+    }
+
+    private void setRunButtonActions() {
+        runButton.setOnAction(event -> {
+            // TODO: Running the algorithm
+        });
+    }
+    public void disableTextArea(boolean value) {
+        if (value) {
+            textArea.setEditable(false);
+            textArea.setOpacity(.75);
+        }
+        else {
+            textArea.setEditable(true);
+            textArea.setOpacity(1);
+        }
     }
 }

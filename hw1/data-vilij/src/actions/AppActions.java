@@ -1,9 +1,12 @@
 package actions;
 
+import dataprocessors.AppData;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import settings.AppPropertyTypes;
+import ui.AppUI;
 import vilij.components.ActionComponent;
 import vilij.components.ConfirmationDialog;
 import vilij.components.Dialog;
@@ -17,7 +20,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Stack;
 
+import static settings.AppPropertyTypes.*;
+import static settings.AppPropertyTypes.RESOURCE_SUBDIR_NOT_FOUND;
+import static settings.AppPropertyTypes.SAVE_UNSAVED_WORK;
 import static vilij.settings.PropertyTypes.SAVE_WORK_TITLE;
 import static vilij.templates.UITemplate.SEPARATOR;
 
@@ -37,6 +45,14 @@ public final class AppActions implements ActionComponent {
     /** The boolean property marking whether or not there are any unsaved changes. */
     SimpleBooleanProperty isUnsaved;
 
+    private boolean isDataValid = false;
+
+    public void clearDataFilePath() { dataFilePath = null; }
+    public void setIsDataValid(boolean value) { isDataValid = value; }
+
+    public SimpleBooleanProperty getIsUnsaved() { return isUnsaved; }
+
+
     public AppActions(ApplicationTemplate applicationTemplate) {
         this.applicationTemplate = applicationTemplate;
         this.isUnsaved = new SimpleBooleanProperty(false);
@@ -46,13 +62,22 @@ public final class AppActions implements ActionComponent {
 
     @Override
     public void handleNewRequest() {
+        ((AppUI) applicationTemplate.getUIComponent()).displayLeftPane();
         try {
             if (!isUnsaved.get() || promptToSave()) {
-                applicationTemplate.getDataComponent().clear();
-                applicationTemplate.getUIComponent().clear();
-                isUnsaved.set(false);
-                dataFilePath = null;
+                if (!isUnsaved.get()) {
+                    applicationTemplate.getDataComponent().clear();
+                    applicationTemplate.getUIComponent().clear();
+                    isUnsaved.set(false);
+                    dataFilePath = null;
+                    ((AppUI) applicationTemplate.getUIComponent()).disableScrnshotButton(true);
+                    ((AppUI) applicationTemplate.getUIComponent()).setInformationText("");
+                    ((AppUI) applicationTemplate.getUIComponent()).disableTextArea(false);
+                    ((AppUI) applicationTemplate.getUIComponent()).enableAlgorithmTypes(false);
+                    ((AppUI) applicationTemplate.getUIComponent()).disableDoneEditButton(false);
+                }
             }
+            ((AppUI) applicationTemplate.getUIComponent()).disableNewButton(false);
         } catch (IOException e) { errorHandlingHelper(); }
     }
 
@@ -63,20 +88,31 @@ public final class AppActions implements ActionComponent {
 
     @Override
     public void handleLoadRequest() {
-        // TODO: NOT A PART OF HW 1
+        load();
+        if (isDataValid) {
+            ((AppUI) applicationTemplate.getUIComponent()).displayLeftPane();
+            ((AppUI) applicationTemplate.getUIComponent()).disableTextArea(true);
+            ((AppUI) applicationTemplate.getUIComponent()).disableDoneEditButton(true);
+            ((AppUI) applicationTemplate.getUIComponent()).disableSaveButton(true);
+            ((AppUI) applicationTemplate.getUIComponent()).disableNewButton(false);
+            ((AppUI) applicationTemplate.getUIComponent()).enableAlgorithmTypes(true);
+            isUnsaved.set(false);
+        }
+        else {
+            if (((AppUI) applicationTemplate.getUIComponent()).getCurrentText() == null) {
+                ((AppUI) applicationTemplate.getUIComponent()).enableAlgorithmTypes(false);
+            }
+        }
     }
 
     @Override
     public void handleExitRequest() {
         try {
             if (!isUnsaved.get() || promptToSave())
-                System.exit(0);
+                if (!isUnsaved.get()) {
+                    System.exit(0);
+                }
         } catch (IOException e) { errorHandlingHelper(); }
-    }
-
-    @Override
-    public void handlePrintRequest() {
-        // TODO: NOT A PART OF HW 1
     }
 
     public void handleScreenshotRequest() throws IOException {
@@ -98,44 +134,86 @@ public final class AppActions implements ActionComponent {
     private boolean promptToSave() throws IOException {
         PropertyManager    manager = applicationTemplate.manager;
         ConfirmationDialog dialog  = ConfirmationDialog.getDialog();
-        dialog.show(manager.getPropertyValue(AppPropertyTypes.SAVE_UNSAVED_WORK_TITLE.name()),
-                    manager.getPropertyValue(AppPropertyTypes.SAVE_UNSAVED_WORK.name()));
+        dialog.show(manager.getPropertyValue(SAVE_UNSAVED_WORK_TITLE.name()),
+                manager.getPropertyValue(SAVE_UNSAVED_WORK.name()));
 
-        if (dialog.getSelectedOption() == null) return false; // if user closes dialog using the window's close button
+        if (dialog.getSelectedOption() == null) return false;   // If user closes dialog using the window's close button
 
-        if (dialog.getSelectedOption().equals(ConfirmationDialog.Option.YES)) {
-            if (dataFilePath == null) {
-                FileChooser fileChooser = new FileChooser();
-                String      dataDirPath = SEPARATOR + manager.getPropertyValue(AppPropertyTypes.DATA_RESOURCE_PATH.name());
-                URL         dataDirURL  = getClass().getResource(dataDirPath);
+        if (dialog.getSelectedOption().equals(ConfirmationDialog.Option.YES)) {     // If the users selects YES
+            ArrayList<String> data = new ArrayList<>();
+            String[] textArea =((AppUI) applicationTemplate.getUIComponent()).getCurrentText().split("\n");
+            for (String line : textArea) {
+                data.add(line);
+            }
+            int x = ((AppData) applicationTemplate.getDataComponent()).parseData(data);
 
-                if (dataDirURL == null)
-                    throw new FileNotFoundException(manager.getPropertyValue(AppPropertyTypes.RESOURCE_SUBDIR_NOT_FOUND.name()));
+            if (x == 0) {
+                if (dataFilePath == null) {     // If there no dataFilePath it means that this file is not stored anywhere so we have to find a place to store it
+                    FileChooser fileChooser = new FileChooser();
+                    String dataDirPath = SEPARATOR + manager.getPropertyValue(DATA_RESOURCE_PATH.name());     // Gets name of the folder (/data)
+                    URL dataDirURL = getClass().getResource(dataDirPath);      // Gets the absolute path to /data folder
 
-                fileChooser.setInitialDirectory(new File(dataDirURL.getFile()));
-                fileChooser.setTitle(manager.getPropertyValue(SAVE_WORK_TITLE.name()));
+                    if (dataDirURL == null)     // If there is no absolute path
+                        throw new FileNotFoundException(manager.getPropertyValue(RESOURCE_SUBDIR_NOT_FOUND.name()));
 
-                String description = manager.getPropertyValue(AppPropertyTypes.DATA_FILE_EXT_DESC.name());
-                String extension   = manager.getPropertyValue(AppPropertyTypes.DATA_FILE_EXT.name());
-                ExtensionFilter extFilter = new ExtensionFilter(String.format("%s (.*%s)", description, extension),
-                                                                String.format("*.%s", extension));
-
-                fileChooser.getExtensionFilters().add(extFilter);
-                File selected = fileChooser.showSaveDialog(applicationTemplate.getUIComponent().getPrimaryWindow());
-                if (selected != null) {
-                    dataFilePath = selected.toPath();
-                    save();
-                } else return false; // if user presses escape after initially selecting 'yes'
+                    fileChooser.setInitialDirectory(new File(dataDirURL.getFile()));
+                    fileChooser.setTitle(manager.getPropertyValue(SAVE_WORK_TITLE.name()));
+                    // Creates a filter to determine what types of files are allowed
+                    String description = manager.getPropertyValue(DATA_FILE_EXT_DESC.name());
+                    String extension = manager.getPropertyValue(DATA_FILE_EXT.name());
+                    FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(String.format("%s", description), String.format("*.%s", extension));
+                    // Applies the filter so the file can only be saved as the types specified above
+                    fileChooser.getExtensionFilters().add(extFilter);
+                    File selected = fileChooser.showSaveDialog(applicationTemplate.getUIComponent().getPrimaryWindow());
+                    if (selected != null) {
+                        dataFilePath = selected.toPath();
+                        save();
+                    } else {
+                        saveErrorHandlingHelper(x);
+                        return false;    // If user presses escape after initially selecting 'yes'
+                    }
+                }
             } else
                 save();
         }
-
-        return !dialog.getSelectedOption().equals(ConfirmationDialog.Option.CANCEL);
+        else if (dialog.getSelectedOption().equals(ConfirmationDialog.Option.NO)) {
+            setIsUnsavedProperty(false);
+            Stack<String> empty = new Stack<>();
+            ((AppData) applicationTemplate.getDataComponent()).setExtraLines(empty);
+            return true;
+        }
+        return !dialog.getSelectedOption().equals(ConfirmationDialog.Option.CANCEL);    // If CANCEL is selected, return false
     }
 
     private void save() throws IOException {
-        applicationTemplate.getDataComponent().saveData(dataFilePath);
-        isUnsaved.set(false);
+        ArrayList<String> data = new ArrayList<>();
+        String[] textArea = ((AppUI) applicationTemplate.getUIComponent()).getCurrentText().split("\n");
+        for (String line : textArea) {
+            data.add(line);
+        }
+        int x = ((AppData) applicationTemplate.getDataComponent()).parseData(data);
+        if (x == 0) {
+            applicationTemplate.getDataComponent().saveData(dataFilePath);
+        } else {
+            saveErrorHandlingHelper(x);
+        }
+    }
+
+    private void load() {
+        PropertyManager manager = PropertyManager.getManager();
+        FileChooser fileChooser = new FileChooser();
+
+        String description = manager.getPropertyValue(DATA_FILE_EXT_DESC.name());
+        String extension   = manager.getPropertyValue(DATA_FILE_EXT.name());
+        FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(String.format("%s", description), String.format("*.%s", extension));
+        fileChooser.getExtensionFilters().add(extFilter);
+        File selected = fileChooser.showOpenDialog(applicationTemplate.getUIComponent().getPrimaryWindow());
+        if (selected != null) {
+            dataFilePath = selected.toPath();
+            applicationTemplate.getDataComponent().loadData(dataFilePath);
+        }
+        Stack<String> empty = new Stack<>();
+        ((AppData) applicationTemplate.getDataComponent()).setExtraLines(empty);
     }
 
     private void errorHandlingHelper() {
@@ -145,5 +223,27 @@ public final class AppActions implements ActionComponent {
         String          errMsg   = manager.getPropertyValue(PropertyTypes.SAVE_ERROR_MSG.name());
         String          errInput = manager.getPropertyValue(AppPropertyTypes.SPECIFIED_FILE.name());
         dialog.show(errTitle, errMsg + errInput);
+    }
+
+    public void saveErrorHandlingHelper(int x) {
+        PropertyManager manager = applicationTemplate.manager;
+        if (x > 0) {   // If x is a positive number, the error is invalid data
+            ErrorDialog dialog = (ErrorDialog) applicationTemplate.getDialog(Dialog.DialogType.ERROR);
+            String errTitle = manager.getPropertyValue(PropertyTypes.SAVE_ERROR_TITLE.name());
+            String errMsg = manager.getPropertyValue(AppPropertyTypes.ERROR_LINE.name());
+            int errLine = x;
+            dialog.show(errTitle, errMsg + errLine);
+            ((AppActions) applicationTemplate.getActionComponent()).clearDataFilePath();
+            ((AppActions) applicationTemplate.getActionComponent()).getIsUnsaved().set(true);
+        }
+        if (x < 0) {   // Else x is a negative number, the error is duplicate names
+            ErrorDialog dialog = (ErrorDialog) applicationTemplate.getDialog(Dialog.DialogType.ERROR);
+            String errTitle = manager.getPropertyValue(PropertyTypes.SAVE_ERROR_TITLE.name());
+            String errMsg = manager.getPropertyValue(AppPropertyTypes.DUPLICATE_NAME.name());
+            int errLine = x * -1;
+            dialog.show(errTitle, errMsg + errLine);
+            ((AppActions) applicationTemplate.getActionComponent()).clearDataFilePath();
+            ((AppActions) applicationTemplate.getActionComponent()).getIsUnsaved().set(true);
+        }
     }
 }

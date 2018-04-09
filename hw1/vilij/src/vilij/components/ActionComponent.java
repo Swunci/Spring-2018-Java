@@ -15,6 +15,4 @@ public interface ActionComponent {
 
     void handleExitRequest();
 
-    void handlePrintRequest();
-
 }
