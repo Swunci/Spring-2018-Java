@@ -14,6 +14,7 @@ public enum AppPropertyTypes {
 
     /* user interface icon file names */
     SCREENSHOT_ICON,
+    SETTINGS_ICON,
 
     /* tooltips for user interface buttons */
     SCREENSHOT_TOOLTIP,
@@ -47,5 +48,5 @@ public enum AppPropertyTypes {
     CONFIRMATION,
     CONFIRMATION_MSG_PART1,
     CONFIRMATION_MSG_PART2,
-    ERROR_LINE
+    ERROR_LINE,
 }

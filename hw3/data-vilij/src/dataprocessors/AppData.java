@@ -119,7 +119,7 @@ public class AppData implements DataComponent {
 
     public int parseData(ArrayList<String> data) {         // Check if the data is valid
         for (int i = 0; i < data.size(); i++) {
-            if (data.get(i) != null) {
+            if (!data.get(i).equals("")) {
                 if (data.get(i).charAt(0) != '@') {         // If the data does not begin with @, it's invalid data
                     return i + 1;                           // Returns the line number of the invalid data
                 }
@@ -144,6 +144,9 @@ public class AppData implements DataComponent {
                     }
                 }
             }
+            else {
+                return i + 1;
+            }
         }
         return 0;
     }
@@ -163,7 +166,7 @@ public class AppData implements DataComponent {
         }
     }
 
-    private ArrayList<String> getLabelNames(ArrayList<String> data) {
+    public ArrayList<String> getLabelNames(ArrayList<String> data) {
         ArrayList<String> returnList = new ArrayList<>();
         for (int i = 0; i < data.size(); i++) {
             String[] strings = data.get(i).split("\t");

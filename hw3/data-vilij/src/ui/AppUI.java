@@ -10,13 +10,13 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
-import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
@@ -37,33 +37,70 @@ import static vilij.settings.PropertyTypes.*;
  */
 public final class AppUI extends UITemplate {
 
-    /** The application to which this class of actions belongs. */
+    /**
+     * The application to which this class of actions belongs.
+     */
     ApplicationTemplate applicationTemplate;
 
     @SuppressWarnings("FieldCanBeLocal")
-    private Button                       scrnshotButton;                // toolbar button to take a screenshot of the data
-    private Button                       displayButton;                 // workspace button to display data on the chart
-    private Button                       doneEditButton;
-    private Button                       runButton;
-    private ChoiceBox                    algorithmTypes;
-    private Text                         informationText;
-    private TextArea                     textArea;                      // text area for new data input
-    private boolean                      hasNewText;                    // whether or not the text area has any new data since last display
-    private LineChart<Number, Number>    chart;                         // the chart where data will be displayed
-    private VBox                         leftPane;
-    private ObservableList<String>       choices;
+    private Button scrnshotButton;                // toolbar button to take a screenshot of the data
+    private Button displayButton;                 // workspace button to display data on the chart
+    private Button doneEditButton;
+    private Button runButton;
+    private ChoiceBox algorithmTypes;
+    private Text informationText;
+    private TextArea textArea;                    // text area for new data input
+    private boolean hasNewText;                   // whether or not the text area has any new data since last display
+    private LineChart<Number, Number> chart;      // the chart where data will be displayed
+    private VBox leftPane;
+    private VBox algorithmTypePane;
+    private HBox selectionPane;
+    private ObservableList<String> choices;
+    private String scrnshotIconPath;
+    private String settingsIconPath;
+    private ToggleGroup group;
 
-    public ChoiceBox getAlgorithmTypes() { return algorithmTypes; }
-    public Text getInformationText() { return informationText; }
-    public TextArea getTextArea() { return textArea; }
-    public LineChart<Number, Number> getChart() { return chart; }
+    public ChoiceBox getAlgorithmTypes() {
+        return algorithmTypes;
+    }
 
-    public void disableNewButton(boolean value) { newButton.setDisable(value);}
-    public void disableSaveButton(boolean value) { saveButton.setDisable(value); }
-    public void disableScrnshotButton(boolean value) { scrnshotButton.setDisable(value); }
-    public void disableDoneEditButton(boolean value) { doneEditButton.setDisable(value); }
-    public void setAlgorithmTypes(ChoiceBox choices) { algorithmTypes = choices; }
-    public void setInformationText(String information) { informationText.setText(information); }
+    public Text getInformationText() {
+        return informationText;
+    }
+
+    public TextArea getTextArea() {
+        return textArea;
+    }
+
+    public LineChart<Number, Number> getChart() {
+        return chart;
+    }
+
+    public HBox getSelectionPane() { return selectionPane; }
+
+    public void disableNewButton(boolean value) {
+        newButton.setDisable(value);
+    }
+
+    public void disableSaveButton(boolean value) {
+        saveButton.setDisable(value);
+    }
+
+    public void disableScrnshotButton(boolean value) {
+        scrnshotButton.setDisable(value);
+    }
+
+    public void disableDoneEditButton(boolean value) {
+        doneEditButton.setDisable(value);
+    }
+
+    public void setAlgorithmTypes(ChoiceBox choices) {
+        algorithmTypes = choices;
+    }
+
+    public void setInformationText(String information) {
+        informationText.setText(information);
+    }
 
     public AppUI(Stage primaryStage, ApplicationTemplate applicationTemplate) {
         super(primaryStage, applicationTemplate);
@@ -72,7 +109,11 @@ public final class AppUI extends UITemplate {
 
     @Override
     protected void setResourcePaths(ApplicationTemplate applicationTemplate) {
+        PropertyManager manager = applicationTemplate.manager;
         super.setResourcePaths(applicationTemplate);
+        String iconsPath = SEPARATOR + String.join(SEPARATOR, manager.getPropertyValue(GUI_RESOURCE_PATH.name()), manager.getPropertyValue(ICONS_RESOURCE_PATH.name()));
+        scrnshotIconPath = String.join(SEPARATOR, iconsPath, manager.getPropertyValue(SCREENSHOT_ICON.name()));
+        settingsIconPath = String.join(SEPARATOR, iconsPath, manager.getPropertyValue(SETTINGS_ICON.name()));
     }
 
     @Override
@@ -82,15 +123,7 @@ public final class AppUI extends UITemplate {
         saveButton = setToolbarButton(saveiconPath, manager.getPropertyValue(SAVE_TOOLTIP.name()), true);
         loadButton = setToolbarButton(loadiconPath, manager.getPropertyValue(LOAD_TOOLTIP.name()), false);
         exitButton = setToolbarButton(exiticonPath, manager.getPropertyValue(EXIT_TOOLTIP.name()), false);
-        String iconsPath = SEPARATOR + String.join(SEPARATOR,
-                                                   manager.getPropertyValue(GUI_RESOURCE_PATH.name()),
-                                                   manager.getPropertyValue(ICONS_RESOURCE_PATH.name()));
-        String scrnshoticonPath = String.join(SEPARATOR,
-                                              iconsPath,
-                                              manager.getPropertyValue(AppPropertyTypes.SCREENSHOT_ICON.name()));
-        scrnshotButton = setToolbarButton(scrnshoticonPath,
-                                          manager.getPropertyValue(AppPropertyTypes.SCREENSHOT_TOOLTIP.name()),
-                                          true);
+        scrnshotButton = setToolbarButton(scrnshotIconPath, manager.getPropertyValue(SCREENSHOT_TOOLTIP.name()),true);
         toolBar = new ToolBar(newButton, saveButton, loadButton, scrnshotButton, exitButton);
     }
 
@@ -115,12 +148,14 @@ public final class AppUI extends UITemplate {
         chart.getData().clear();
     }
 
-    public String getCurrentText() { return textArea.getText(); }
+    public String getCurrentText() {
+        return textArea.getText();
+    }
 
     private void layout() {
         PropertyManager manager = applicationTemplate.manager;
-        NumberAxis      xAxis   = new NumberAxis();
-        NumberAxis      yAxis   = new NumberAxis();
+        NumberAxis xAxis = new NumberAxis();
+        NumberAxis yAxis = new NumberAxis();
         chart = new LineChart<>(xAxis, yAxis);
         chart.setTitle(manager.getPropertyValue(CHART_TITLE.name()));
 
@@ -134,8 +169,8 @@ public final class AppUI extends UITemplate {
         leftPane = new VBox();
 
         VBox informationPane = new VBox();
-        VBox algorithmTypePane = new VBox();
-        VBox selectionPane = new VBox();
+        algorithmTypePane = new VBox();
+        selectionPane = new HBox();
         VBox rightPane = new VBox();
         HBox mainPane = new HBox();
 
@@ -188,29 +223,17 @@ public final class AppUI extends UITemplate {
 
     public void loadDataInformation(int numInstances, int numLabels, ArrayList<String> labelNames, String dataFilePath) {
         String text = numInstances + " instances with " + numLabels + " labels loaded from " + dataFilePath + "\n The labels are:";
-        for (String labelName: labelNames) {
+        for (String labelName : labelNames) {
             text += "\n- " + labelName;
         }
         setInformationText(text);
-    }
-
-    private void setAlgorithmTypesActions() {
-        getAlgorithmTypes().getSelectionModel().selectedIndexProperty().addListener(new ChangeListener<Number>() {
-            public void changed(ObservableValue ov, Number value, Number new_value) {
-                if (new_value.intValue() == 0) {
-                    // TODO: Classification Algorithms UI
-                }
-                else {
-                    // TODO: Clustering Algorithms UI
-                }
-            }
-        });
     }
 
     private void setWorkspaceActions() {
         setTextAreaActions();
         setDisplayButtonActions();
         setDoneEditButtonActions();
+        setAlgorithmTypesActions();
         setRunButtonActions();
     }
 
@@ -222,11 +245,9 @@ public final class AppUI extends UITemplate {
                         ((AppActions) applicationTemplate.getActionComponent()).setIsUnsavedProperty(true);
                         if (newValue.charAt(newValue.length() - 1) == '\n')
                             hasNewText = true;
-                        newButton.setDisable(false);
                         saveButton.setDisable(false);
                     } else {
                         hasNewText = true;
-                        newButton.setDisable(true);
                         saveButton.setDisable(true);
                     }
                 }
@@ -259,16 +280,109 @@ public final class AppUI extends UITemplate {
             if (doneEditButton.getText().equals(manager.getPropertyValue(EDIT_BUTTON_TEXT.name()))) {
                 doneEditButton.setText(manager.getPropertyValue(DONE_BUTTON_TEXT.name()));
                 disableTextArea(false);
-            }
-            else if (doneEditButton.getText().equals(manager.getPropertyValue(DONE_BUTTON_TEXT.name()))) {
+            } else if (doneEditButton.getText().equals(manager.getPropertyValue(DONE_BUTTON_TEXT.name()))) {
                 String[] strings = textArea.getText().split("\n");
                 ArrayList<String> data = new ArrayList<>();
-                for (String string: strings) {
+                for (String string : strings) {
                     data.add(string);
                 }
-                // TODO: Check if textArea data is valid
-                doneEditButton.setText(manager.getPropertyValue(EDIT_BUTTON_TEXT.name()));
-                disableTextArea(true);
+                if (!(textArea.getText().equals("")) && textArea.getText() != null) {
+                    int x = ((AppData) applicationTemplate.getDataComponent()).parseData(data);
+                    if (x == 0) {
+                        enableAlgorithmTypes(true);
+                        doneEditButton.setText(manager.getPropertyValue(EDIT_BUTTON_TEXT.name()));
+                        disableTextArea(true);
+                        ArrayList<String> labelNames = ((AppData) applicationTemplate.getDataComponent()).getLabelNames(data);
+                        int counter = labelNames.size();
+                        for (String labelName: labelNames) {
+                            if (labelName.toLowerCase().equals("null")) {
+                                counter--;
+                            }
+                        }
+                        if (counter != 2) {
+                            algorithmTypePane.getChildren().remove(algorithmTypes);
+                            choices = FXCollections.observableArrayList("Clustering");
+                            setAlgorithmTypes(new ChoiceBox(choices));
+                            algorithmTypePane.getChildren().add(algorithmTypes);
+                        }
+                        else {
+                            algorithmTypePane.getChildren().remove(algorithmTypes);
+                            choices = FXCollections.observableArrayList("Classification", "Clustering");
+                            setAlgorithmTypes(new ChoiceBox(choices));
+                            algorithmTypePane.getChildren().add(algorithmTypes);
+                        }
+                        loadDataInformation(data.size(), labelNames.size(), labelNames, "");
+
+
+                    } else {
+                        ((AppActions) applicationTemplate.getActionComponent()).saveErrorHandlingHelper(x);
+                        enableAlgorithmTypes(false);
+                    }
+                }
+                else {
+                    doneEditButton.setText(manager.getPropertyValue(EDIT_BUTTON_TEXT.name()));
+                    disableTextArea(true);
+                }
+            }
+        });
+    }
+
+    private void setAlgorithmTypesActions() {
+        algorithmTypes.getSelectionModel().selectedItemProperty().addListener(new ChangeListener() {
+            @Override
+            public void changed(ObservableValue observable, Object oldValue, Object newValue) {
+                if (newValue.toString().equals("Classification")) {
+                    selectionPane.getChildren().clear();
+                    VBox options = new VBox();
+                    VBox settings = new VBox();
+                    group = new ToggleGroup();
+
+                    RadioButton rb1 = new RadioButton("Classification Algorithm 1");
+                    RadioButton rb2 = new RadioButton("Algorithm 2");
+                    RadioButton rb3 = new RadioButton("Algorithm 3");
+                    rb1.setToggleGroup(group);
+                    rb2.setToggleGroup(group);
+                    rb3.setToggleGroup(group);
+                    options.getChildren().addAll(rb1, rb2, rb3);
+                    options.setPadding(new Insets(10, 0, 10 ,0));
+                    options.setSpacing(12);
+
+                    Button sb1 = new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
+                    Button sb2 = new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
+                    Button sb3= new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
+                    settings.getChildren().addAll(sb1, sb2, sb3);
+                    options.setPadding(new Insets(5, 0, 10 ,0));
+                    settings.setSpacing(5);
+
+                    selectionPane.getChildren().addAll(options, settings);
+
+                    // TODO: Radio buttons actions and settings buttons actions
+                } else if (newValue.toString().equals("Clustering")) {
+                    selectionPane.getChildren().clear();
+                    VBox options = new VBox();
+                    VBox settings = new VBox();
+                    group = new ToggleGroup();
+
+                    RadioButton rb1 = new RadioButton("Clustering Algorithm 1");
+                    RadioButton rb2 = new RadioButton("Algorithm 2");
+                    RadioButton rb3 = new RadioButton("Algorithm 3");
+                    rb1.setToggleGroup(group);
+                    rb2.setToggleGroup(group);
+                    rb3.setToggleGroup(group);
+                    options.getChildren().addAll(rb1, rb2, rb3);
+                    options.setPadding(new Insets(10, 0, 10 ,0));
+                    options.setSpacing(12);
+
+                    Button sb1 = new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
+                    Button sb2 = new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
+                    Button sb3= new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
+                    settings.getChildren().addAll(sb1, sb2, sb3);
+                    options.setPadding(new Insets(5, 0, 10 ,0));
+                    settings.setSpacing(5);
+
+                    selectionPane.getChildren().addAll(options, settings);
+                    // TODO: Radio buttons actions and settings buttons actions
+                }
             }
         });
     }
@@ -278,6 +392,7 @@ public final class AppUI extends UITemplate {
             // TODO: Running the algorithm
         });
     }
+
     public void disableTextArea(boolean value) {
         if (value) {
             textArea.setEditable(false);

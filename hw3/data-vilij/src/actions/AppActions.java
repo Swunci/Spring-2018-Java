@@ -75,6 +75,7 @@ public final class AppActions implements ActionComponent {
                     ((AppUI) applicationTemplate.getUIComponent()).disableTextArea(false);
                     ((AppUI) applicationTemplate.getUIComponent()).enableAlgorithmTypes(false);
                     ((AppUI) applicationTemplate.getUIComponent()).disableDoneEditButton(false);
+                    ((AppUI) applicationTemplate.getUIComponent()).getSelectionPane().getChildren().clear();
                 }
             }
             ((AppUI) applicationTemplate.getUIComponent()).disableNewButton(false);
@@ -83,9 +84,19 @@ public final class AppActions implements ActionComponent {
 
     @Override
     public void handleSaveRequest() {
-        // TODO: NOT A PART OF HW 1
+        if (isUnsaved.get() && dataFilePath != null) { //
+            save();
+            ((AppUI) applicationTemplate.getUIComponent()).disableSaveButton(true);
+        }
+        else {
+            try {
+                saveNewFile();
+                ((AppUI) applicationTemplate.getUIComponent()).disableSaveButton(true);
+            } catch (IOException e) {
+                errorHandlingHelper();
+            }
+        }
     }
-
     @Override
     public void handleLoadRequest() {
         load();
@@ -96,6 +107,7 @@ public final class AppActions implements ActionComponent {
             ((AppUI) applicationTemplate.getUIComponent()).disableSaveButton(true);
             ((AppUI) applicationTemplate.getUIComponent()).disableNewButton(false);
             ((AppUI) applicationTemplate.getUIComponent()).enableAlgorithmTypes(true);
+            ((AppUI) applicationTemplate.getUIComponent()).getSelectionPane().getChildren().clear();
             isUnsaved.set(false);
         }
         else {
@@ -185,7 +197,7 @@ public final class AppActions implements ActionComponent {
         return !dialog.getSelectedOption().equals(ConfirmationDialog.Option.CANCEL);    // If CANCEL is selected, return false
     }
 
-    private void save() throws IOException {
+    private void save() {
         ArrayList<String> data = new ArrayList<>();
         String[] textArea = ((AppUI) applicationTemplate.getUIComponent()).getCurrentText().split("\n");
         for (String line : textArea) {
@@ -195,6 +207,42 @@ public final class AppActions implements ActionComponent {
         if (x == 0) {
             applicationTemplate.getDataComponent().saveData(dataFilePath);
         } else {
+            saveErrorHandlingHelper(x);
+        }
+    }
+
+    private void saveNewFile() throws IOException {
+        PropertyManager manager = PropertyManager.getManager();
+        FileChooser fileChooser = new FileChooser();
+        String dataDirPath = SEPARATOR + manager.getPropertyValue(DATA_RESOURCE_PATH.name());
+        URL dataDirURL = getClass().getResource(dataDirPath);
+        //fileChooser.setInitialDirectory(new File(dataDirURL.getPath()));
+        //fileChooser.setTitle(manager.getPropertyValue(SAVE_WORK_TITLE.name()));
+
+        if (dataDirURL == null)
+            throw new FileNotFoundException(manager.getPropertyValue(RESOURCE_SUBDIR_NOT_FOUND.name()));
+
+        ArrayList<String> data = new ArrayList<>();
+        String[] textArea =((AppUI) applicationTemplate.getUIComponent()).getCurrentText().split("\n");
+        for (String line : textArea) {
+            data.add(line);
+        }
+        int x = ((AppData) applicationTemplate.getDataComponent()).parseData(data);
+
+        if (x == 0) {
+            fileChooser.setInitialDirectory(new File(dataDirURL.getFile()));
+            fileChooser.setTitle(manager.getPropertyValue(SAVE_WORK_TITLE.name()));
+            String description = manager.getPropertyValue(DATA_FILE_EXT_DESC.name());
+            String extension = manager.getPropertyValue(DATA_FILE_EXT.name());
+            FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(String.format("%s", description), String.format("*.%s", extension));
+            fileChooser.getExtensionFilters().add(extFilter);
+            File selected = fileChooser.showSaveDialog(applicationTemplate.getUIComponent().getPrimaryWindow());
+            if (selected != null) {
+                dataFilePath = selected.toPath();
+                applicationTemplate.getDataComponent().saveData(dataFilePath);
+            }
+        }
+        else {
             saveErrorHandlingHelper(x);
         }
     }
@@ -233,8 +281,8 @@ public final class AppActions implements ActionComponent {
             String errMsg = manager.getPropertyValue(AppPropertyTypes.ERROR_LINE.name());
             int errLine = x;
             dialog.show(errTitle, errMsg + errLine);
-            ((AppActions) applicationTemplate.getActionComponent()).clearDataFilePath();
-            ((AppActions) applicationTemplate.getActionComponent()).getIsUnsaved().set(true);
+            clearDataFilePath();
+            getIsUnsaved().set(true);
         }
         if (x < 0) {   // Else x is a negative number, the error is duplicate names
             ErrorDialog dialog = (ErrorDialog) applicationTemplate.getDialog(Dialog.DialogType.ERROR);
@@ -242,8 +290,8 @@ public final class AppActions implements ActionComponent {
             String errMsg = manager.getPropertyValue(AppPropertyTypes.DUPLICATE_NAME.name());
             int errLine = x * -1;
             dialog.show(errTitle, errMsg + errLine);
-            ((AppActions) applicationTemplate.getActionComponent()).clearDataFilePath();
-            ((AppActions) applicationTemplate.getActionComponent()).getIsUnsaved().set(true);
+            clearDataFilePath();
+            getIsUnsaved().set(true);
         }
     }
 }
