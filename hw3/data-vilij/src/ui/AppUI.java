@@ -24,7 +24,6 @@ import settings.AppPropertyTypes;
 import vilij.propertymanager.PropertyManager;
 import vilij.templates.ApplicationTemplate;
 import vilij.templates.UITemplate;
-
 import java.util.ArrayList;
 
 import static settings.AppPropertyTypes.*;
@@ -58,7 +57,9 @@ public final class AppUI extends UITemplate {
     private ObservableList<String> choices;
     private String scrnshotIconPath;
     private String settingsIconPath;
-    private ToggleGroup group;
+    private ToggleGroup radioGroup;
+    private ArrayList<Button> classificationConfigs;
+    private ArrayList<Button> clusteringConfigs;
 
     public ChoiceBox getAlgorithmTypes() {
         return algorithmTypes;
@@ -166,6 +167,31 @@ public final class AppUI extends UITemplate {
         displayButton = new Button(manager.getPropertyValue(DISPLAY_TEXT.name()));
         doneEditButton = new Button(manager.getPropertyValue(DONE_BUTTON_TEXT.name()));
         runButton = new Button(manager.getPropertyValue(RUN_BUTTON_TEXT.name()));
+
+        classificationConfigs = new ArrayList<>();
+        clusteringConfigs = new ArrayList<>();
+
+        Button classificationSB1 = new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
+        Button classificationSB2 = new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
+        Button classificationSB3 = new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
+        Button clusteringSB1 = new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
+        Button clusteringSB2 = new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
+        Button clusteringSB3 = new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
+
+        classificationSB1.setUserData(new RunConfiguration());
+        classificationSB2.setUserData(new RunConfiguration());
+        classificationSB3.setUserData(new RunConfiguration());
+        clusteringSB1.setUserData(new RunConfiguration());
+        clusteringSB2.setUserData(new RunConfiguration());
+        clusteringSB3.setUserData(new RunConfiguration());
+
+        classificationConfigs.add(classificationSB1);
+        classificationConfigs.add(classificationSB2);
+        classificationConfigs.add(classificationSB3);
+        clusteringConfigs.add(clusteringSB1);
+        clusteringConfigs.add(clusteringSB2);
+        clusteringConfigs.add(clusteringSB3);
+
         leftPane = new VBox();
 
         VBox informationPane = new VBox();
@@ -180,7 +206,7 @@ public final class AppUI extends UITemplate {
         leftPaneTitle.setFont(Font.font(fontName, fontSize));
 
         leftPane.setAlignment(Pos.TOP_CENTER);
-        leftPane.getChildren().addAll(leftPaneTitle, textArea, doneEditButton, informationPane, algorithmTypePane, selectionPane);
+        leftPane.getChildren().addAll(leftPaneTitle, textArea, doneEditButton, informationPane, algorithmTypePane, selectionPane, runButton);
         leftPane.setPadding(new Insets(20));
         leftPane.setSpacing(5);
 
@@ -206,7 +232,11 @@ public final class AppUI extends UITemplate {
         rightPane.setAlignment(Pos.CENTER);
         rightPane.getChildren().addAll(chart);
 
+        radioGroup = new ToggleGroup();
+
         leftPane.setVisible(false);
+        runButton.setVisible(false);
+        runButton.setDisable(true);
         mainPane.getChildren().addAll(leftPane, rightPane);
         appPane.getChildren().add(mainPane);
     }
@@ -234,6 +264,8 @@ public final class AppUI extends UITemplate {
         setDisplayButtonActions();
         setDoneEditButtonActions();
         setAlgorithmTypesActions();
+        setAlgorithmButtonActions();
+        setSettingsButtonActions();
         setRunButtonActions();
     }
 
@@ -332,59 +364,92 @@ public final class AppUI extends UITemplate {
             @Override
             public void changed(ObservableValue observable, Object oldValue, Object newValue) {
                 if (newValue.toString().equals("Classification")) {
+                    runButton.setVisible(false);
                     selectionPane.getChildren().clear();
                     VBox options = new VBox();
                     VBox settings = new VBox();
-                    group = new ToggleGroup();
 
                     RadioButton rb1 = new RadioButton("Classification Algorithm 1");
                     RadioButton rb2 = new RadioButton("Algorithm 2");
                     RadioButton rb3 = new RadioButton("Algorithm 3");
-                    rb1.setToggleGroup(group);
-                    rb2.setToggleGroup(group);
-                    rb3.setToggleGroup(group);
+                    rb1.setUserData("Classification Algorithm 1");
+                    rb2.setUserData("Algorithm 2");
+                    rb3.setUserData("Algorithm 3");
+                    rb1.setToggleGroup(radioGroup);
+                    rb2.setToggleGroup(radioGroup);
+                    rb3.setToggleGroup(radioGroup);
                     options.getChildren().addAll(rb1, rb2, rb3);
                     options.setPadding(new Insets(10, 0, 10 ,0));
                     options.setSpacing(12);
 
-                    Button sb1 = new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
-                    Button sb2 = new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
-                    Button sb3= new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
-                    settings.getChildren().addAll(sb1, sb2, sb3);
+                    for (Button button: classificationConfigs) {
+                        settings.getChildren().add(button);
+                    }
                     options.setPadding(new Insets(5, 0, 10 ,0));
                     settings.setSpacing(5);
 
                     selectionPane.getChildren().addAll(options, settings);
 
-                    // TODO: Radio buttons actions and settings buttons actions
                 } else if (newValue.toString().equals("Clustering")) {
+                    runButton.setVisible(false);
                     selectionPane.getChildren().clear();
                     VBox options = new VBox();
                     VBox settings = new VBox();
-                    group = new ToggleGroup();
 
                     RadioButton rb1 = new RadioButton("Clustering Algorithm 1");
                     RadioButton rb2 = new RadioButton("Algorithm 2");
                     RadioButton rb3 = new RadioButton("Algorithm 3");
-                    rb1.setToggleGroup(group);
-                    rb2.setToggleGroup(group);
-                    rb3.setToggleGroup(group);
+                    rb1.setUserData("Classification Algorithm 1");
+                    rb2.setUserData("Algorithm 2");
+                    rb3.setUserData("Algorithm 3");
+                    rb1.setToggleGroup(radioGroup);
+                    rb2.setToggleGroup(radioGroup);
+                    rb3.setToggleGroup(radioGroup);
                     options.getChildren().addAll(rb1, rb2, rb3);
                     options.setPadding(new Insets(10, 0, 10 ,0));
                     options.setSpacing(12);
 
-                    Button sb1 = new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
-                    Button sb2 = new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
-                    Button sb3= new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
-                    settings.getChildren().addAll(sb1, sb2, sb3);
+                    for (Button button: clusteringConfigs) {
+                        settings.getChildren().add(button);
+                    }
                     options.setPadding(new Insets(5, 0, 10 ,0));
                     settings.setSpacing(5);
 
                     selectionPane.getChildren().addAll(options, settings);
-                    // TODO: Radio buttons actions and settings buttons actions
                 }
             }
         });
+    }
+
+    private void setAlgorithmButtonActions() {
+        // TODO: Algorithm actions
+        radioGroup.selectedToggleProperty().addListener(new ChangeListener<Toggle>() {
+            @Override
+            public void changed(ObservableValue<? extends Toggle> observable, Toggle oldValue, Toggle newValue) {
+                if (radioGroup.getSelectedToggle() != null) {
+                    runButton.setVisible(true);
+                }
+            }
+        });
+    }
+
+    private void setSettingsButtonActions() {
+        for (Button button: classificationConfigs) {
+            button.setOnAction(event -> {
+                RunConfiguration setting = (RunConfiguration) button.getUserData();
+                setting.displayRunConfiguration();
+                setting.hideNumberOfLabels();
+            });
+        }
+
+        for (Button button: clusteringConfigs) {
+            button.setOnAction(event -> {
+                RunConfiguration setting = (RunConfiguration) button.getUserData();
+                String text = "Number of Labels: " + ((AppData) applicationTemplate.getDataComponent()).getNumOfLabels();
+                setting.setNumberOfLabelsText(text);
+                setting.displayRunConfiguration();
+            });
+        }
     }
 
     private void setRunButtonActions() {

@@ -31,10 +31,13 @@ public class AppData implements DataComponent {
     private TSDProcessor processor;
     private ApplicationTemplate applicationTemplate;
     private Stack<String> extraLines = new Stack();
+    private int numOfLabels;
 
     public Stack<String> getExtraLines() {
         return extraLines;
     }
+
+    public int getNumOfLabels() { return numOfLabels; }
 
     public void setExtraLines(Stack<String> extraLines) {
         this.extraLines = extraLines;
@@ -70,7 +73,8 @@ public class AppData implements DataComponent {
                 applicationTemplate.getUIComponent().clear();
                 TextArea textArea = ((AppUI) applicationTemplate.getUIComponent()).getTextArea();
                 displayText(textArea, file);
-                ((AppUI) applicationTemplate.getUIComponent()).loadDataInformation(data.size(), getLabelNames(data).size(), getLabelNames(data), file.getName());
+                numOfLabels = getLabelNames(data).size();
+                ((AppUI) applicationTemplate.getUIComponent()).loadDataInformation(data.size(), numOfLabels, getLabelNames(data), file.getName());
             } else {
                 invalidDataHandler(x);
             }

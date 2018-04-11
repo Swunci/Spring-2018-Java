@@ -24,18 +24,21 @@ public class ApplicationTemplate extends Application {
     protected final ErrorDialog        errorDialog        = ErrorDialog.getDialog();
     protected final ConfirmationDialog confirmationDialog = ConfirmationDialog.getDialog();
 
+    private static Stage mainStage;
+    public static Stage getMainStage() {
+        return mainStage;
+    }
+
     protected DataComponent   dataComponent;
     protected UIComponent     uiComponent;
     protected ActionComponent actionComponent;
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        mainStage = primaryStage;
         dialogsAudit(primaryStage);
         if (propertyAudit())
             userInterfaceAudit(primaryStage);
-
-        HBox hbox = new HBox(20);
-
     }
 
     protected void dialogsAudit(Stage primaryStage) {
