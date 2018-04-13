@@ -49,7 +49,26 @@ functionality within the main workspace. -->
         <property name="CONFIRMATION_MSG_PART1" value="Loaded data consists of "/>
         <property name="CONFIRMATION_MSG_PART2" value=" lines. Showing only the first 10 in the text area."/>
         <property name="ERROR_LINE" value="Error at line "/>
-
+        <property name="CLASSIFICATION" value="Classification"/>
+        <property name="CLUSTERING" value="Clustering"/>
+        <property name="DATA_INFORMATION_ONE" value=" instances with "/>
+        <property name="DATA_INFORMATION_TWO" value=" labels loaded from "/>
+        <property name="DATA_INFORMATION_THREE" value="The labels are:"/>
+        <property name="DATA_INFORMATION_DASH" value="-"/>
+        <property name="NULL_LABEL" value="null"/>
+        <property name="CLASSIFICATION_ALGORITHM_NAME_1" value="Classification Algorithm 1"/>
+        <property name="CLASSIFICATION_ALGORITHM_NAME_2" value="Classification Algorithm 2"/>
+        <property name="CLASSIFICATION_ALGORITHM_NAME_3" value="Classification Algorithm 3"/>
+        <property name="CLUSTERING_ALGORITHM_NAME_1" value="Clustering Algorithm 1"/>
+        <property name="CLUSTERING_ALGORITHM_NAME_2" value="Clustering Algorithm 2"/>
+        <property name="CLUSTERING_ALGORITHM_NAME_3" value="Clustering Algorithm 3"/>
+        <property name="RUN_CONFIGURATION_TITLE" value="Run Configuration"/>
+        <property name="RUN_CONFIGURATION_ITERATIONS" value="Iterations:"/>
+        <property name="RUN_CONFIGURATION_UPDATE_INTERVAL" value="Update Interval:"/>
+        <property name="RUN_CONFIGURATION_CONTINUOUS_RUN" value="Continuous Run:"/>
+        <property name="RUN_CONFIGURATION_NUMBER_LABELS" value="Number of Labels:"/>
+        <property name="EMPTY_FIELD" value="Empty Field(s)"/>
+        <property name="RUN_CONFIGURATION_ERROR" value="Please fill out all the fields."/>
     </property_list>
     <property_options_list/>
 </properties>

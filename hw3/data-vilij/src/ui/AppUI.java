@@ -13,14 +13,11 @@ import javafx.scene.chart.NumberAxis;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import settings.AppPropertyTypes;
 import vilij.propertymanager.PropertyManager;
 import vilij.templates.ApplicationTemplate;
 import vilij.templates.UITemplate;
@@ -60,6 +57,14 @@ public final class AppUI extends UITemplate {
     private ToggleGroup radioGroup;
     private ArrayList<Button> classificationConfigs;
     private ArrayList<Button> clusteringConfigs;
+
+    public Button getDoneEditButton() {
+        return doneEditButton;
+    }
+
+    public Button getRunButton() {
+        return runButton;
+    }
 
     public ChoiceBox getAlgorithmTypes() {
         return algorithmTypes;
@@ -218,7 +223,7 @@ public final class AppUI extends UITemplate {
         Double algorithmTypePaneFontSize = Double.parseDouble(manager.getPropertyValue(ALGORITHM_TYPE_PANE_FONT_SIZE.name()));
         algorithmTypePaneText.setFont(Font.font(algorithmTypePaneFont, algorithmTypePaneFontSize));
 
-        choices = FXCollections.observableArrayList("Classification", "Clustering");
+        choices = FXCollections.observableArrayList(manager.getPropertyValue(CLASSIFICATION.name()), manager.getPropertyValue(CLUSTERING.name()));
         algorithmTypes = new ChoiceBox(choices);
         algorithmTypes.setDisable(true);
         setAlgorithmTypes(algorithmTypes);
@@ -236,7 +241,6 @@ public final class AppUI extends UITemplate {
 
         leftPane.setVisible(false);
         runButton.setVisible(false);
-        runButton.setDisable(true);
         mainPane.getChildren().addAll(leftPane, rightPane);
         appPane.getChildren().add(mainPane);
     }
@@ -252,9 +256,12 @@ public final class AppUI extends UITemplate {
     }
 
     public void loadDataInformation(int numInstances, int numLabels, ArrayList<String> labelNames, String dataFilePath) {
-        String text = numInstances + " instances with " + numLabels + " labels loaded from " + dataFilePath + "\n The labels are:";
+        PropertyManager manager = applicationTemplate.manager;
+        String text = numInstances + manager.getPropertyValue(DATA_INFORMATION_ONE.name()) + numLabels
+                                    + manager.getPropertyValue(DATA_INFORMATION_TWO.name()) + dataFilePath + "\n"
+                                    + manager.getPropertyValue(DATA_INFORMATION_THREE.name());
         for (String labelName : labelNames) {
-            text += "\n- " + labelName;
+            text += "\n" + manager.getPropertyValue(DATA_INFORMATION_DASH.name()) + labelName;
         }
         setInformationText(text);
     }
@@ -318,7 +325,7 @@ public final class AppUI extends UITemplate {
                 for (String string : strings) {
                     data.add(string);
                 }
-                if (!(textArea.getText().equals("")) && textArea.getText() != null) {
+                if (!(textArea.getText().isEmpty()) && textArea.getText() != null) {
                     int x = ((AppData) applicationTemplate.getDataComponent()).parseData(data);
                     if (x == 0) {
                         enableAlgorithmTypes(true);
@@ -327,22 +334,25 @@ public final class AppUI extends UITemplate {
                         ArrayList<String> labelNames = ((AppData) applicationTemplate.getDataComponent()).getLabelNames(data);
                         int counter = labelNames.size();
                         for (String labelName: labelNames) {
-                            if (labelName.toLowerCase().equals("null")) {
+                            if (labelName.toLowerCase().equals(manager.getPropertyValue(NULL_LABEL.name()))) {
                                 counter--;
                             }
                         }
+                        ((AppData) applicationTemplate.getDataComponent()).setNumOfLabels(counter);
                         if (counter != 2) {
                             algorithmTypePane.getChildren().remove(algorithmTypes);
-                            choices = FXCollections.observableArrayList("Clustering");
+                            choices = FXCollections.observableArrayList(manager.getPropertyValue(CLUSTERING.name()));
                             setAlgorithmTypes(new ChoiceBox(choices));
                             algorithmTypePane.getChildren().add(algorithmTypes);
                         }
                         else {
                             algorithmTypePane.getChildren().remove(algorithmTypes);
-                            choices = FXCollections.observableArrayList("Classification", "Clustering");
+                            choices = FXCollections.observableArrayList(manager.getPropertyValue(CLASSIFICATION.name()), manager.getPropertyValue(CLUSTERING.name()));
                             setAlgorithmTypes(new ChoiceBox(choices));
                             algorithmTypePane.getChildren().add(algorithmTypes);
                         }
+                        setAlgorithmTypesActions();
+                        selectionPane.getChildren().clear();
                         loadDataInformation(data.size(), labelNames.size(), labelNames, "");
 
 
@@ -363,59 +373,62 @@ public final class AppUI extends UITemplate {
         algorithmTypes.getSelectionModel().selectedItemProperty().addListener(new ChangeListener() {
             @Override
             public void changed(ObservableValue observable, Object oldValue, Object newValue) {
-                if (newValue.toString().equals("Classification")) {
-                    runButton.setVisible(false);
-                    selectionPane.getChildren().clear();
-                    VBox options = new VBox();
-                    VBox settings = new VBox();
+                if (newValue != null) {
+                    PropertyManager manager = applicationTemplate.manager;
+                    if (newValue.toString().equals(manager.getPropertyValue(CLASSIFICATION.name()))) {
+                        runButton.setVisible(false);
+                        selectionPane.getChildren().clear();
+                        VBox options = new VBox();
+                        VBox settings = new VBox();
 
-                    RadioButton rb1 = new RadioButton("Classification Algorithm 1");
-                    RadioButton rb2 = new RadioButton("Algorithm 2");
-                    RadioButton rb3 = new RadioButton("Algorithm 3");
-                    rb1.setUserData("Classification Algorithm 1");
-                    rb2.setUserData("Algorithm 2");
-                    rb3.setUserData("Algorithm 3");
-                    rb1.setToggleGroup(radioGroup);
-                    rb2.setToggleGroup(radioGroup);
-                    rb3.setToggleGroup(radioGroup);
-                    options.getChildren().addAll(rb1, rb2, rb3);
-                    options.setPadding(new Insets(10, 0, 10 ,0));
-                    options.setSpacing(12);
+                        RadioButton rb1 = new RadioButton(manager.getPropertyValue(CLASSIFICATION_ALGORITHM_NAME_1.name()));
+                        RadioButton rb2 = new RadioButton(manager.getPropertyValue(CLASSIFICATION_ALGORITHM_NAME_2.name()));
+                        RadioButton rb3 = new RadioButton(manager.getPropertyValue(CLASSIFICATION_ALGORITHM_NAME_3.name()));
+                        rb1.setUserData(classificationConfigs.get(0));
+                        rb2.setUserData(classificationConfigs.get(1));
+                        rb3.setUserData(classificationConfigs.get(2));
+                        rb1.setToggleGroup(radioGroup);
+                        rb2.setToggleGroup(radioGroup);
+                        rb3.setToggleGroup(radioGroup);
+                        options.getChildren().addAll(rb1, rb2, rb3);
+                        options.setPadding(new Insets(10, 0, 10, 0));
+                        options.setSpacing(12);
 
-                    for (Button button: classificationConfigs) {
-                        settings.getChildren().add(button);
+                        for (Button button : classificationConfigs) {
+                            settings.getChildren().add(button);
+                        }
+                        options.setPadding(new Insets(5, 0, 10, 0));
+                        settings.setSpacing(5);
+
+                        selectionPane.getChildren().addAll(options, settings);
+
+                    } else if (newValue.toString().equals(manager.getPropertyValue(CLUSTERING.name()))) {
+                        runButton.setVisible(false);
+                        selectionPane.getChildren().clear();
+                        VBox options = new VBox();
+                        VBox settings = new VBox();
+
+                        RadioButton rb1 = new RadioButton(manager.getPropertyValue(CLUSTERING_ALGORITHM_NAME_1.name()));
+                        RadioButton rb2 = new RadioButton(manager.getPropertyValue(CLUSTERING_ALGORITHM_NAME_2.name()));
+                        RadioButton rb3 = new RadioButton(manager.getPropertyValue(CLUSTERING_ALGORITHM_NAME_3.name()));
+                        rb1.setUserData(clusteringConfigs.get(0));
+                        rb2.setUserData(clusteringConfigs.get(1));
+                        rb3.setUserData(clusteringConfigs.get(2));
+                        rb1.setToggleGroup(radioGroup);
+                        rb2.setToggleGroup(radioGroup);
+                        rb3.setToggleGroup(radioGroup);
+                        options.getChildren().addAll(rb1, rb2, rb3);
+                        options.setPadding(new Insets(10, 0, 10, 0));
+                        options.setSpacing(12);
+
+                        for (Button button : clusteringConfigs) {
+                            settings.getChildren().add(button);
+                        }
+                        options.setPadding(new Insets(5, 0, 10, 0));
+                        settings.setSpacing(5);
+
+                        selectionPane.getChildren().addAll(options, settings);
                     }
-                    options.setPadding(new Insets(5, 0, 10 ,0));
-                    settings.setSpacing(5);
-
-                    selectionPane.getChildren().addAll(options, settings);
-
-                } else if (newValue.toString().equals("Clustering")) {
-                    runButton.setVisible(false);
-                    selectionPane.getChildren().clear();
-                    VBox options = new VBox();
-                    VBox settings = new VBox();
-
-                    RadioButton rb1 = new RadioButton("Clustering Algorithm 1");
-                    RadioButton rb2 = new RadioButton("Algorithm 2");
-                    RadioButton rb3 = new RadioButton("Algorithm 3");
-                    rb1.setUserData("Classification Algorithm 1");
-                    rb2.setUserData("Algorithm 2");
-                    rb3.setUserData("Algorithm 3");
-                    rb1.setToggleGroup(radioGroup);
-                    rb2.setToggleGroup(radioGroup);
-                    rb3.setToggleGroup(radioGroup);
-                    options.getChildren().addAll(rb1, rb2, rb3);
-                    options.setPadding(new Insets(10, 0, 10 ,0));
-                    options.setSpacing(12);
-
-                    for (Button button: clusteringConfigs) {
-                        settings.getChildren().add(button);
-                    }
-                    options.setPadding(new Insets(5, 0, 10 ,0));
-                    settings.setSpacing(5);
-
-                    selectionPane.getChildren().addAll(options, settings);
                 }
             }
         });
@@ -429,6 +442,7 @@ public final class AppUI extends UITemplate {
                 if (radioGroup.getSelectedToggle() != null) {
                     runButton.setVisible(true);
                 }
+
             }
         });
     }
@@ -445,8 +459,6 @@ public final class AppUI extends UITemplate {
         for (Button button: clusteringConfigs) {
             button.setOnAction(event -> {
                 RunConfiguration setting = (RunConfiguration) button.getUserData();
-                String text = "Number of Labels: " + ((AppData) applicationTemplate.getDataComponent()).getNumOfLabels();
-                setting.setNumberOfLabelsText(text);
                 setting.displayRunConfiguration();
             });
         }

@@ -43,6 +43,10 @@ public class AppData implements DataComponent {
         this.extraLines = extraLines;
     }
 
+    public void setNumOfLabels(int value) {
+        numOfLabels = value;
+    }
+
     public AppData(ApplicationTemplate applicationTemplate) {
         this.processor = new TSDProcessor();
         this.applicationTemplate = applicationTemplate;
@@ -64,6 +68,7 @@ public class AppData implements DataComponent {
             }
             int x = parseData(data);
             if (x == 0) {     // parseData returns the line of the first error or 0 if data is valid
+                PropertyManager manager = applicationTemplate.manager;
                 ((AppUI) applicationTemplate.getUIComponent()).getTextArea().clear();
                 extraLines.clear();
                 for (int y = 10; y < data.size(); y++) {
@@ -74,6 +79,11 @@ public class AppData implements DataComponent {
                 TextArea textArea = ((AppUI) applicationTemplate.getUIComponent()).getTextArea();
                 displayText(textArea, file);
                 numOfLabels = getLabelNames(data).size();
+                for (String labelName: getLabelNames(data)) {
+                    if (labelName.toLowerCase().equals(manager.getPropertyValue(NULL_LABEL.name()))) {
+                        numOfLabels--;
+                    }
+                }
                 ((AppUI) applicationTemplate.getUIComponent()).loadDataInformation(data.size(), numOfLabels, getLabelNames(data), file.getName());
             } else {
                 invalidDataHandler(x);
@@ -123,15 +133,18 @@ public class AppData implements DataComponent {
 
     public int parseData(ArrayList<String> data) {         // Check if the data is valid
         for (int i = 0; i < data.size(); i++) {
-            if (!data.get(i).equals("")) {
+            if (!data.get(i).trim().isEmpty()) {
                 if (data.get(i).charAt(0) != '@') {         // If the data does not begin with @, it's invalid data
                     return i + 1;                           // Returns the line number of the invalid data
                 }
                 String[] strings = data.get(i).split("\t");
                 if (strings.length != 3) {                  // Valid data should be spaced with 2 tabs and have 3 variables
                     return i + 1;
-                } else {                                      // Check if there are duplicate instance names
-                    for (int j = 0; j < i; j++) {
+                } else if (strings[1].trim().isEmpty()) {         // Check if the label is an empty string
+                    return i + 1;
+                }
+                else {
+                    for (int j = 0; j < i; j++) {           // Check if there are duplicate instance names
                         String[] pastStrings = data.get(j).split("\t");
                         if (pastStrings[0].equals(strings[0])) {
                             return 0 - (i + 1);

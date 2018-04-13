@@ -75,6 +75,8 @@ public final class AppActions implements ActionComponent {
                     ((AppUI) applicationTemplate.getUIComponent()).disableTextArea(false);
                     ((AppUI) applicationTemplate.getUIComponent()).enableAlgorithmTypes(false);
                     ((AppUI) applicationTemplate.getUIComponent()).disableDoneEditButton(false);
+                    ((AppUI) applicationTemplate.getUIComponent()).getDoneEditButton().setText("Done");
+                    ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setVisible(false);
                     ((AppUI) applicationTemplate.getUIComponent()).getSelectionPane().getChildren().clear();
                 }
             }
