@@ -1,6 +1,8 @@
 package ui;
 
 import actions.AppActions;
+import algorithms.RandomClassifier;
+import data.DataSet;
 import dataprocessors.AppData;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -78,11 +80,21 @@ public final class AppUI extends UITemplate {
         return textArea;
     }
 
+    public VBox getAlgorithmTypePane() {
+        return algorithmTypePane;
+    }
+
+    public HBox getSelectionPane() {
+        return selectionPane;
+    }
+
+    public ObservableList<String> getChoices() {
+        return choices;
+    }
+
     public LineChart<Number, Number> getChart() {
         return chart;
     }
-
-    public HBox getSelectionPane() { return selectionPane; }
 
     public void disableNewButton(boolean value) {
         newButton.setDisable(value);
@@ -108,6 +120,9 @@ public final class AppUI extends UITemplate {
         informationText.setText(information);
     }
 
+    public void setChoices(ObservableList<String> choices) {
+        this.choices = choices;
+    }
     public AppUI(Stage primaryStage, ApplicationTemplate applicationTemplate) {
         super(primaryStage, applicationTemplate);
         this.applicationTemplate = applicationTemplate;
@@ -164,6 +179,7 @@ public final class AppUI extends UITemplate {
         NumberAxis yAxis = new NumberAxis();
         chart = new LineChart<>(xAxis, yAxis);
         chart.setTitle(manager.getPropertyValue(CHART_TITLE.name()));
+        chart.setAnimated(false);
 
         textArea = new TextArea();
         textArea.setPrefSize(240, 190);
@@ -369,7 +385,7 @@ public final class AppUI extends UITemplate {
         });
     }
 
-    private void setAlgorithmTypesActions() {
+    public void setAlgorithmTypesActions() {
         algorithmTypes.getSelectionModel().selectedItemProperty().addListener(new ChangeListener() {
             @Override
             public void changed(ObservableValue observable, Object oldValue, Object newValue) {
@@ -435,14 +451,12 @@ public final class AppUI extends UITemplate {
     }
 
     private void setAlgorithmButtonActions() {
-        // TODO: Algorithm actions
         radioGroup.selectedToggleProperty().addListener(new ChangeListener<Toggle>() {
             @Override
             public void changed(ObservableValue<? extends Toggle> observable, Toggle oldValue, Toggle newValue) {
                 if (radioGroup.getSelectedToggle() != null) {
                     runButton.setVisible(true);
                 }
-
             }
         });
     }
@@ -467,6 +481,35 @@ public final class AppUI extends UITemplate {
     private void setRunButtonActions() {
         runButton.setOnAction(event -> {
             // TODO: Running the algorithm
+            PropertyManager manager = applicationTemplate.manager;
+            if (algorithmTypes.getSelectionModel().getSelectedItem().toString().equals(manager.getPropertyValue(CLASSIFICATION.name()))) {
+                try {
+                    DataSet dataSet = new DataSet();
+                    String[] lines = textArea.getText().split("\n");
+                    for (String line : lines) {
+                        dataSet.addInstance(line);
+                    }
+                    int maxIterations = ((RunConfiguration) ((Button) radioGroup.getSelectedToggle().getUserData()).getUserData()).getInterations();
+                    int updateInterval = ((RunConfiguration) ((Button) radioGroup.getSelectedToggle().getUserData()).getUserData()).getUpdateInterval();
+                    boolean tocontinue = ((RunConfiguration) ((Button) radioGroup.getSelectedToggle().getUserData()).getUserData()).getContinuousRun();
+                    RandomClassifier rc = new RandomClassifier(dataSet, maxIterations, updateInterval, tocontinue);
+                    rc.run();
+
+
+                    chart.getData().clear();
+                    AppData dataComponent = (AppData) applicationTemplate.getDataComponent();
+                    dataComponent.clear();
+                    dataComponent.loadData(textArea.getText());
+                    dataComponent.displayData();
+
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            else if (algorithmTypes.getSelectionModel().getSelectedItem().toString().equals(manager.getPropertyValue(CLUSTERING.name()))) {
+                // TODO: Clustering run actions
+            }
         });
     }
 

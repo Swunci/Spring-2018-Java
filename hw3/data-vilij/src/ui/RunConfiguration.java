@@ -4,7 +4,6 @@ import settings.AppPropertyTypes;
 import vilij.components.Dialog;
 import vilij.components.ErrorDialog;
 import vilij.propertymanager.PropertyManager;
-import vilij.settings.PropertyTypes;
 import vilij.templates.ApplicationTemplate;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -121,6 +120,9 @@ public class RunConfiguration {
                         if (Integer.parseInt(newValue) < 1) {
                             iterationsTF.setText(oldValue);
                         }
+                        else {
+                            iterations = Integer.parseInt(newValue);
+                        }
                     }
                 } catch (Exception e) {
                     iterationsTF.setText(oldValue);
@@ -136,6 +138,9 @@ public class RunConfiguration {
                         if (Integer.parseInt(newValue) < 1) {
                             updateIntervalTF.setText(oldValue);
                         }
+                        else {
+                            updateInterval = Integer.parseInt(newValue);
+                        }
                     }
                 } catch (Exception e) {
                     updateIntervalTF.setText(oldValue);
@@ -150,6 +155,9 @@ public class RunConfiguration {
                         Integer.parseInt(newValue);
                         if (Integer.parseInt(newValue) < 1 || Integer.parseInt(newValue) > 4) {
                             numOfLabelsTF.setText(oldValue);
+                        }
+                        else {
+                            labels = Integer.parseInt(newValue);
                         }
                     }
                 } catch (Exception e) {

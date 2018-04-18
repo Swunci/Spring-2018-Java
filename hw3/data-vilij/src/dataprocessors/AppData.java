@@ -1,7 +1,9 @@
 package dataprocessors;
 
 import actions.AppActions;
+import javafx.collections.FXCollections;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.TextArea;
 import settings.AppPropertyTypes;
 import ui.AppUI;
@@ -84,6 +86,20 @@ public class AppData implements DataComponent {
                         numOfLabels--;
                     }
                 }
+                if (numOfLabels != 2) {
+                    ((AppUI) applicationTemplate.getUIComponent()).getAlgorithmTypePane().getChildren().remove(((AppUI) applicationTemplate.getUIComponent()).getAlgorithmTypes());
+                    ((AppUI) applicationTemplate.getUIComponent()).setChoices(FXCollections.observableArrayList(manager.getPropertyValue(CLUSTERING.name())));
+                    ((AppUI) applicationTemplate.getUIComponent()).setAlgorithmTypes(new ChoiceBox(((AppUI) applicationTemplate.getUIComponent()).getChoices()));
+                    ((AppUI) applicationTemplate.getUIComponent()).getAlgorithmTypePane().getChildren().add(((AppUI) applicationTemplate.getUIComponent()).getAlgorithmTypes());
+                }
+                else {
+                    ((AppUI) applicationTemplate.getUIComponent()).getAlgorithmTypePane().getChildren().remove(((AppUI) applicationTemplate.getUIComponent()).getAlgorithmTypes());
+                    ((AppUI) applicationTemplate.getUIComponent()).setChoices(FXCollections.observableArrayList(manager.getPropertyValue(CLASSIFICATION.name()), manager.getPropertyValue(CLUSTERING.name())));
+                    ((AppUI) applicationTemplate.getUIComponent()).setAlgorithmTypes(new ChoiceBox(((AppUI) applicationTemplate.getUIComponent()).getChoices()));
+                    ((AppUI) applicationTemplate.getUIComponent()).getAlgorithmTypePane().getChildren().add(((AppUI) applicationTemplate.getUIComponent()).getAlgorithmTypes());
+                }
+                ((AppUI) applicationTemplate.getUIComponent()).setAlgorithmTypesActions();
+                ((AppUI) applicationTemplate.getUIComponent()).getSelectionPane().getChildren().clear();
                 ((AppUI) applicationTemplate.getUIComponent()).loadDataInformation(data.size(), numOfLabels, getLabelNames(data), file.getName());
             } else {
                 invalidDataHandler(x);
