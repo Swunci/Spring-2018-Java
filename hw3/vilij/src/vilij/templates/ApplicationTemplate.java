@@ -25,9 +25,11 @@ public class ApplicationTemplate extends Application {
     protected final ConfirmationDialog confirmationDialog = ConfirmationDialog.getDialog();
 
     private static Stage mainStage;
+
     public static Stage getMainStage() {
         return mainStage;
     }
+
 
     protected DataComponent   dataComponent;
     protected UIComponent     uiComponent;

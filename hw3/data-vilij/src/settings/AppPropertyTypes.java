@@ -21,9 +21,11 @@ public enum AppPropertyTypes {
 
     /* error messages */
     RESOURCE_SUBDIR_NOT_FOUND,
+    EXIT_WHILE_RUNNING_WARNING,
 
     /* application-specific message titles */
     SAVE_UNSAVED_WORK_TITLE,
+    EXIT_TITLE,
 
     /* application-specific messages */
     SAVE_UNSAVED_WORK,
@@ -40,7 +42,6 @@ public enum AppPropertyTypes {
     DONE_BUTTON_TEXT,
     EDIT_BUTTON_TEXT,
     RUN_BUTTON_TEXT,
-    DISPLAY_TEXT,
     ALGORITHM_TYPE_PANE_TITLE,
     ALGORITHM_TYPE_PANE_FONT,
     ALGORITHM_TYPE_PANE_FONT_SIZE,
@@ -69,4 +70,7 @@ public enum AppPropertyTypes {
     RUN_CONFIGURATION_NUMBER_LABELS,
     EMPTY_FIELD,
     RUN_CONFIGURATION_ERROR,
+    SAVE_IMAGE_TITLE,
+    SAVE_FILE_EXT_DESC,
+    SAVE_IMAGE_FILE_EXT,
 }

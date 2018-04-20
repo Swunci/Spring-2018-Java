@@ -1,5 +1,6 @@
 package dataprocessors;
 
+import algorithms.RandomClassifier;
 import javafx.event.EventHandler;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
@@ -10,10 +11,12 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
 import settings.AppPropertyTypes;
 import ui.AppUI;
+import ui.DataVisualizer;
 import vilij.components.Dialog;
 import vilij.components.ErrorDialog;
 import vilij.propertymanager.PropertyManager;
 import vilij.settings.PropertyTypes;
+import vilij.templates.ApplicationTemplate;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -40,11 +43,15 @@ public final class TSDProcessor {
         }
     }
 
+    ApplicationTemplate applicationTemplate;
     private Map<String, String>  dataLabels;
     private Map<String, Point2D> dataPoints;
-    private double yTotal, xMin, xMax;
+    private double yMin, yMax, xMin, xMax;
     private int counter = 0;
 
+    public void setApplicationTemplate(ApplicationTemplate applicationTemplate) {
+        this.applicationTemplate = applicationTemplate;
+    }
 
     public TSDProcessor() {
         dataLabels = new HashMap<>();
@@ -87,7 +94,6 @@ public final class TSDProcessor {
      * @param chart the specified chart
      */
     void toChartData(XYChart<Number, Number> chart) {
-        yTotal = 0;
         counter = 0;
         Set<String> labels = new HashSet<>(dataLabels.values());
         for (String label : labels) {
@@ -100,7 +106,6 @@ public final class TSDProcessor {
                 seriesData.setNode(new HoverNode(entry.getKey()));
                 series.getData().add(seriesData);
 
-                yTotal += point.getY();
                 if (counter == 0) {
                     xMax = point.getX();
                     xMin = point.getY();
@@ -115,23 +120,6 @@ public final class TSDProcessor {
             chart.getData().add(series);
             Node line = series.getNode().lookup(".chart-series-line");
             line.setStyle("-fx-stroke: transparent;");
-        }
-        if (counter > 0) {
-            double yAverage = yTotal / (double) counter;
-            XYChart.Series<Number, Number> average = new XYChart.Series<>();
-            average.setName("Average y-value");
-            if (xMin == xMax) {
-                xMin -= xMin / 2.0;
-                xMax += xMax / 2.0;
-            }
-            average.getData().add(new XYChart.Data<>(xMin, yAverage));
-            average.getData().add(new XYChart.Data<>(xMax, yAverage));
-            chart.getData().add(average);
-            average.getNode().toBack();
-            for (XYChart.Data<Number, Number> data : average.getData()) {
-                StackPane nodes = (StackPane) data.getNode();
-                nodes.setVisible(false);
-            }
         }
     }
 
@@ -160,6 +148,34 @@ public final class TSDProcessor {
     void clear() {
         dataPoints.clear();
         dataLabels.clear();
+    }
+
+    public void updateLine() {
+        if (counter > 0) {
+            XYChart.Series<Number, Number> equation = new XYChart.Series<>();
+            equation.setName("Classification Line");
+            if (xMin == xMax) {
+                xMin -= xMin / 2.0;
+                xMax += xMax / 2.0;
+            }
+
+            List<Integer> output = ((AppUI) applicationTemplate.getUIComponent()).getRandomClassifier().getOutput();
+            yMin = calculateY(output.get(0), output.get(1), output.get(2), xMin);
+            yMax = calculateY(output.get(0), output.get(1), output.get(2), xMax);
+
+            equation.getData().add(new XYChart.Data<>(xMin, yMin));
+            equation.getData().add(new XYChart.Data<>(xMax, yMax));
+            ((AppUI) applicationTemplate.getUIComponent()).getChart().getData().add(equation);
+            equation.getNode().toBack();
+            for (XYChart.Data<Number, Number> data : equation.getData()) {
+                StackPane nodes = (StackPane) data.getNode();
+                nodes.setVisible(false);
+            }
+        }
+    }
+
+    public double calculateY(double xCoefficient, double yCoefficient, double c, double x) {
+        return -1 * (c + xCoefficient * x) / yCoefficient;
     }
 
     private String checkedname(String name) throws InvalidDataNameException {

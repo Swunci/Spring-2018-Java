@@ -4,6 +4,7 @@ import actions.AppActions;
 import algorithms.RandomClassifier;
 import data.DataSet;
 import dataprocessors.AppData;
+import dataprocessors.TSDProcessor;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -23,6 +24,8 @@ import javafx.stage.Stage;
 import vilij.propertymanager.PropertyManager;
 import vilij.templates.ApplicationTemplate;
 import vilij.templates.UITemplate;
+
+import java.io.IOException;
 import java.util.ArrayList;
 
 import static settings.AppPropertyTypes.*;
@@ -42,7 +45,6 @@ public final class AppUI extends UITemplate {
 
     @SuppressWarnings("FieldCanBeLocal")
     private Button scrnshotButton;                // toolbar button to take a screenshot of the data
-    private Button displayButton;                 // workspace button to display data on the chart
     private Button doneEditButton;
     private Button runButton;
     private ChoiceBox algorithmTypes;
@@ -59,6 +61,13 @@ public final class AppUI extends UITemplate {
     private ToggleGroup radioGroup;
     private ArrayList<Button> classificationConfigs;
     private ArrayList<Button> clusteringConfigs;
+    private RandomClassifier randomClassifier;
+    private Thread runningThread;
+
+
+    public Button getScrnshotButton() {
+        return scrnshotButton;
+    }
 
     public Button getDoneEditButton() {
         return doneEditButton;
@@ -94,6 +103,14 @@ public final class AppUI extends UITemplate {
 
     public LineChart<Number, Number> getChart() {
         return chart;
+    }
+
+    public RandomClassifier getRandomClassifier() {
+        return randomClassifier;
+    }
+
+    public Thread getRunningThread() {
+        return runningThread;
     }
 
     public void disableNewButton(boolean value) {
@@ -185,7 +202,6 @@ public final class AppUI extends UITemplate {
         textArea.setPrefSize(240, 190);
         chart.setPrefSize(700, 550);
         informationText = new Text();
-        displayButton = new Button(manager.getPropertyValue(DISPLAY_TEXT.name()));
         doneEditButton = new Button(manager.getPropertyValue(DONE_BUTTON_TEXT.name()));
         runButton = new Button(manager.getPropertyValue(RUN_BUTTON_TEXT.name()));
 
@@ -284,7 +300,7 @@ public final class AppUI extends UITemplate {
 
     private void setWorkspaceActions() {
         setTextAreaActions();
-        setDisplayButtonActions();
+        setScrnshotButtonActions();
         setDoneEditButtonActions();
         setAlgorithmTypesActions();
         setAlgorithmButtonActions();
@@ -312,19 +328,12 @@ public final class AppUI extends UITemplate {
         });
     }
 
-    private void setDisplayButtonActions() {
-        displayButton.setOnAction(event -> {
-            if (hasNewText) {
-                try {
-                    chart.getData().clear();
-                    AppData dataComponent = (AppData) applicationTemplate.getDataComponent();
-                    dataComponent.clear();
-                    dataComponent.loadData(textArea.getText());
-                    dataComponent.displayData();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
+    private void setScrnshotButtonActions() {
+        scrnshotButton.setOnAction(event -> {
+            try {
+                ((AppActions) applicationTemplate.getActionComponent()).handleScreenshotRequest();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         });
     }
@@ -482,6 +491,7 @@ public final class AppUI extends UITemplate {
         runButton.setOnAction(event -> {
             // TODO: Running the algorithm
             PropertyManager manager = applicationTemplate.manager;
+
             if (algorithmTypes.getSelectionModel().getSelectedItem().toString().equals(manager.getPropertyValue(CLASSIFICATION.name()))) {
                 try {
                     DataSet dataSet = new DataSet();
@@ -492,16 +502,9 @@ public final class AppUI extends UITemplate {
                     int maxIterations = ((RunConfiguration) ((Button) radioGroup.getSelectedToggle().getUserData()).getUserData()).getInterations();
                     int updateInterval = ((RunConfiguration) ((Button) radioGroup.getSelectedToggle().getUserData()).getUserData()).getUpdateInterval();
                     boolean tocontinue = ((RunConfiguration) ((Button) radioGroup.getSelectedToggle().getUserData()).getUserData()).getContinuousRun();
-                    RandomClassifier rc = new RandomClassifier(dataSet, maxIterations, updateInterval, tocontinue);
-                    rc.run();
-
-
-                    chart.getData().clear();
-                    AppData dataComponent = (AppData) applicationTemplate.getDataComponent();
-                    dataComponent.clear();
-                    dataComponent.loadData(textArea.getText());
-                    dataComponent.displayData();
-
+                    randomClassifier = new RandomClassifier(dataSet, maxIterations, updateInterval, tocontinue);
+                    runningThread = new Thread(randomClassifier);
+                    runningThread.start();
 
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -521,6 +524,19 @@ public final class AppUI extends UITemplate {
         else {
             textArea.setEditable(true);
             textArea.setOpacity(1);
+        }
+    }
+
+    public void updateChart() {
+        try {
+            chart.getData().clear();
+            AppData dataComponent = (AppData) applicationTemplate.getDataComponent();
+            dataComponent.clear();
+            dataComponent.loadData(textArea.getText());
+            dataComponent.displayData();
+            ((AppData) applicationTemplate.getDataComponent()).getTSDProcessor().updateLine();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

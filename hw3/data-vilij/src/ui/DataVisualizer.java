@@ -16,6 +16,12 @@ import static vilij.settings.InitializationParams.*;
  */
 public final class DataVisualizer extends ApplicationTemplate {
 
+    public static ApplicationTemplate applicationTemplate;
+
+    public static ApplicationTemplate getApplicationTemplate() {
+        return applicationTemplate;
+    }
+
     @Override
     public void start(Stage primaryStage) {
         dialogsAudit(primaryStage);
@@ -36,7 +42,7 @@ public final class DataVisualizer extends ApplicationTemplate {
         setUIComponent(new AppUI(primaryStage, this));
         setActionComponent(new AppActions(this));
         setDataComponent(new AppData(this));
-
+        applicationTemplate = this;
         uiComponent.initialize();
     }
 

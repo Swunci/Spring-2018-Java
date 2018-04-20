@@ -23,6 +23,7 @@ functionality within the main workspace. -->
 
         <!-- APPLICATION-SPECIFIC MESSAGE TITLES -->
         <property name="SAVE_UNSAVED_WORK_TITLE" value="Save Current Work"/>
+        <property name="EXIT_TITLE" value="Exit"/>
 
         <!-- APPLICATION-SPECIFIC MESSAGES -->
         <property name="SAVE_UNSAVED_WORK" value="Would you like to save current work?"/>
@@ -36,11 +37,9 @@ functionality within the main workspace. -->
         <property name="LEFT_PANE_TITLE_FONT" value="Arial"/>
         <property name="LEFT_PANE_TITLE_SIZE" value="18"/>
         <property name="CHART_TITLE" value="Data Visualization"/>
-        <property name="DISPLAY_BUTTON_TEXT" value="Display Data"/>
         <property name="DONE_BUTTON_TEXT" value="Done"/>
         <property name="EDIT_BUTTON_TEXT" value="Edit"/>
         <property name="RUN_BUTTON_TEXT" value="Run"/>
-        <property name="DISPLAY_TEXT" value="Display"/>
         <property name="ALGORITHM_TYPE_PANE_TITLE" value="Algorithm Type"/>
         <property name="ALGORITHM_TYPE_PANE_FONT" value="Arial"/>
         <property name="ALGORITHM_TYPE_PANE_FONT_SIZE" value="12"/>
@@ -69,6 +68,9 @@ functionality within the main workspace. -->
         <property name="RUN_CONFIGURATION_NUMBER_LABELS" value="Number of Labels:"/>
         <property name="EMPTY_FIELD" value="Empty Field(s)"/>
         <property name="RUN_CONFIGURATION_ERROR" value="Please fill out all the fields."/>
+        <property name="SAVE_IMAGE_TITLE" value="Save Image"/>
+        <property name="SAVE_FILE_EXT_DESC" value="PNG file"/>
+        <property name="SAVE_IMAGE_FILE_EXT" value="png"/>
     </property_list>
     <property_options_list/>
 </properties>

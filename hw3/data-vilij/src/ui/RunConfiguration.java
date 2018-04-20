@@ -20,7 +20,7 @@ import javafx.stage.Stage;
 
 public class RunConfiguration {
 
-    ApplicationTemplate applicationTemplate = new ApplicationTemplate();
+    ApplicationTemplate applicationTemplate = DataVisualizer.getApplicationTemplate();
     private Stage settings;
     private int iterations = 10;
     private int updateInterval = 1;

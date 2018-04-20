@@ -2,6 +2,9 @@ package actions;
 
 import dataprocessors.AppData;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.SnapshotParameters;
+import javafx.scene.image.WritableImage;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
@@ -15,6 +18,7 @@ import vilij.propertymanager.PropertyManager;
 import vilij.settings.PropertyTypes;
 import vilij.templates.ApplicationTemplate;
 
+import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -24,8 +28,8 @@ import java.util.ArrayList;
 import java.util.Stack;
 
 import static settings.AppPropertyTypes.*;
-import static settings.AppPropertyTypes.RESOURCE_SUBDIR_NOT_FOUND;
-import static settings.AppPropertyTypes.SAVE_UNSAVED_WORK;
+import static settings.AppPropertyTypes.SAVE_FILE_EXT_DESC;
+import static settings.AppPropertyTypes.SAVE_IMAGE_FILE_EXT;
 import static vilij.settings.PropertyTypes.SAVE_WORK_TITLE;
 import static vilij.templates.UITemplate.SEPARATOR;
 
@@ -111,6 +115,7 @@ public final class AppActions implements ActionComponent {
             ((AppUI) applicationTemplate.getUIComponent()).enableAlgorithmTypes(true);
             ((AppUI) applicationTemplate.getUIComponent()).getSelectionPane().getChildren().clear();
             isUnsaved.set(false);
+            ((AppUI) applicationTemplate.getUIComponent()).getScrnshotButton().setDisable(true);
         }
         else {
             if (((AppUI) applicationTemplate.getUIComponent()).getCurrentText() == null) {
@@ -121,16 +126,22 @@ public final class AppActions implements ActionComponent {
 
     @Override
     public void handleExitRequest() {
-        try {
-            if (!isUnsaved.get() || promptToSave())
-                if (!isUnsaved.get()) {
-                    System.exit(0);
-                }
-        } catch (IOException e) { errorHandlingHelper(); }
+        if (((AppUI) applicationTemplate.getUIComponent()).getRunningThread().isAlive()) {
+            exitErrorHandlingHelper();
+        } else {
+            try {
+                if (!isUnsaved.get() || promptToSave())
+                    if (!isUnsaved.get()) {
+                        System.exit(0);
+                    }
+            } catch (IOException e) {
+                errorHandlingHelper();
+            }
+        }
     }
 
     public void handleScreenshotRequest() throws IOException {
-        // TODO: NOT A PART OF HW 1
+        saveAsPng();
     }
 
     /**
@@ -249,6 +260,36 @@ public final class AppActions implements ActionComponent {
         }
     }
 
+    public void saveAsPng() throws IOException {
+        WritableImage image = ((AppUI) applicationTemplate.getUIComponent()).getChart().snapshot(new SnapshotParameters(), null);
+
+        PropertyManager manager = PropertyManager.getManager();
+        FileChooser fileChooser = new FileChooser();
+        String dataDirPath = SEPARATOR + manager.getPropertyValue(DATA_RESOURCE_PATH.name());
+        URL dataDirURL = getClass().getResource(dataDirPath);
+
+        if (dataDirURL == null)
+            throw new FileNotFoundException(manager.getPropertyValue(RESOURCE_SUBDIR_NOT_FOUND.name()));
+
+        fileChooser.setInitialDirectory(new File(dataDirURL.getFile()));
+        fileChooser.setTitle(manager.getPropertyValue(SAVE_IMAGE_TITLE.name()));
+        String description = manager.getPropertyValue(SAVE_FILE_EXT_DESC.name());
+        String extension = manager.getPropertyValue(SAVE_IMAGE_FILE_EXT.name());
+        FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(String.format("%s", description), String.format("*.%s", extension));
+        fileChooser.getExtensionFilters().add(extFilter);
+        File selected = fileChooser.showSaveDialog(applicationTemplate.getUIComponent().getPrimaryWindow());
+        if (selected != null) {
+            dataFilePath = selected.toPath();
+            File file = dataFilePath.toFile();
+            try {
+                ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
     private void load() {
         PropertyManager manager = PropertyManager.getManager();
         FileChooser fileChooser = new FileChooser();
@@ -294,6 +335,21 @@ public final class AppActions implements ActionComponent {
             dialog.show(errTitle, errMsg + errLine);
             clearDataFilePath();
             getIsUnsaved().set(true);
+        }
+    }
+
+    public void exitErrorHandlingHelper() {
+        PropertyManager manager = applicationTemplate.manager;
+        ConfirmationDialog dialog = ConfirmationDialog.getDialog();
+        String errTitle = manager.getPropertyValue(AppPropertyTypes.EXIT_TITLE.name());
+        String errMsg = manager.getPropertyValue(AppPropertyTypes.EXIT_WHILE_RUNNING_WARNING.name());
+        dialog.show(errTitle, errMsg);
+
+        if (dialog.getSelectedOption() == null) {
+            return;
+        }
+        if (dialog.getSelectedOption().equals(ConfirmationDialog.Option.YES)) {
+            System.exit(0);
         }
     }
 }

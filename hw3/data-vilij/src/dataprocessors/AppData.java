@@ -18,6 +18,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Stack;
 
 import static settings.AppPropertyTypes.*;
@@ -34,6 +35,14 @@ public class AppData implements DataComponent {
     private ApplicationTemplate applicationTemplate;
     private Stack<String> extraLines = new Stack();
     private int numOfLabels;
+
+    public TSDProcessor getTSDProcessor() {
+        return processor;
+    }
+
+    public ApplicationTemplate getApplicationTemplate() {
+        return applicationTemplate;
+    }
 
     public Stack<String> getExtraLines() {
         return extraLines;
@@ -52,6 +61,7 @@ public class AppData implements DataComponent {
     public AppData(ApplicationTemplate applicationTemplate) {
         this.processor = new TSDProcessor();
         this.applicationTemplate = applicationTemplate;
+        this.processor.setApplicationTemplate(applicationTemplate);
     }
 
     @Override
