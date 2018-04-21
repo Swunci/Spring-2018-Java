@@ -16,14 +16,20 @@ import static vilij.settings.InitializationParams.*;
  */
 public final class DataVisualizer extends ApplicationTemplate {
 
-    public static ApplicationTemplate applicationTemplate;
+    private static ApplicationTemplate applicationTemplate;
+    private static Stage primaryStage;
 
     public static ApplicationTemplate getApplicationTemplate() {
         return applicationTemplate;
     }
 
+    public static Stage getPrimaryStage() {
+        return primaryStage;
+    }
+
     @Override
     public void start(Stage primaryStage) {
+        this.primaryStage = primaryStage;
         dialogsAudit(primaryStage);
         if (propertyAudit())
             userInterfaceAudit(primaryStage);

@@ -69,20 +69,18 @@ public final class AppActions implements ActionComponent {
         ((AppUI) applicationTemplate.getUIComponent()).displayLeftPane();
         try {
             if (!isUnsaved.get() || promptToSave()) {
-                if (!isUnsaved.get()) {
-                    applicationTemplate.getDataComponent().clear();
-                    applicationTemplate.getUIComponent().clear();
-                    isUnsaved.set(false);
-                    dataFilePath = null;
-                    ((AppUI) applicationTemplate.getUIComponent()).disableScrnshotButton(true);
-                    ((AppUI) applicationTemplate.getUIComponent()).setInformationText("");
-                    ((AppUI) applicationTemplate.getUIComponent()).disableTextArea(false);
-                    ((AppUI) applicationTemplate.getUIComponent()).enableAlgorithmTypes(false);
-                    ((AppUI) applicationTemplate.getUIComponent()).disableDoneEditButton(false);
-                    ((AppUI) applicationTemplate.getUIComponent()).getDoneEditButton().setText("Done");
-                    ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setVisible(false);
-                    ((AppUI) applicationTemplate.getUIComponent()).getSelectionPane().getChildren().clear();
-                }
+                applicationTemplate.getDataComponent().clear();
+                applicationTemplate.getUIComponent().clear();
+                isUnsaved.set(false);
+                dataFilePath = null;
+                ((AppUI) applicationTemplate.getUIComponent()).disableScrnshotButton(true);
+                ((AppUI) applicationTemplate.getUIComponent()).setInformationText("");
+                ((AppUI) applicationTemplate.getUIComponent()).disableTextArea(false);
+                ((AppUI) applicationTemplate.getUIComponent()).enableAlgorithmTypes(false);
+                ((AppUI) applicationTemplate.getUIComponent()).disableDoneEditButton(false);
+                ((AppUI) applicationTemplate.getUIComponent()).getDoneEditButton().setText("Done");
+                ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setVisible(false);
+                ((AppUI) applicationTemplate.getUIComponent()).getSelectionPane().getChildren().clear();
             }
             ((AppUI) applicationTemplate.getUIComponent()).disableNewButton(false);
         } catch (IOException e) { errorHandlingHelper(); }
@@ -126,14 +124,13 @@ public final class AppActions implements ActionComponent {
 
     @Override
     public void handleExitRequest() {
-        if (((AppUI) applicationTemplate.getUIComponent()).getRunningThread().isAlive()) {
+        if ((((AppUI) applicationTemplate.getUIComponent()).getRunningThread() != null) && ((AppUI) applicationTemplate.getUIComponent()).getRunningThread().isAlive()) {
             exitErrorHandlingHelper();
         } else {
             try {
-                if (!isUnsaved.get() || promptToSave())
-                    if (!isUnsaved.get()) {
-                        System.exit(0);
-                    }
+                if (!isUnsaved.get() || promptToSave()) {
+                    System.exit(0);
+                }
             } catch (IOException e) {
                 errorHandlingHelper();
             }
@@ -325,7 +322,6 @@ public final class AppActions implements ActionComponent {
             int errLine = x;
             dialog.show(errTitle, errMsg + errLine);
             clearDataFilePath();
-            getIsUnsaved().set(true);
         }
         if (x < 0) {   // Else x is a negative number, the error is duplicate names
             ErrorDialog dialog = (ErrorDialog) applicationTemplate.getDialog(Dialog.DialogType.ERROR);
@@ -334,7 +330,6 @@ public final class AppActions implements ActionComponent {
             int errLine = x * -1;
             dialog.show(errTitle, errMsg + errLine);
             clearDataFilePath();
-            getIsUnsaved().set(true);
         }
     }
 

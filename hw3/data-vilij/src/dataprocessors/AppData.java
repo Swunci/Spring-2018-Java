@@ -143,6 +143,7 @@ public class AppData implements DataComponent {
     public void saveData(Path dataFilePath) {
         try (PrintWriter writer = new PrintWriter(Files.newOutputStream(dataFilePath))) {
             writer.write(((AppUI) applicationTemplate.getUIComponent()).getCurrentText());
+            ((AppActions) applicationTemplate.getActionComponent()).getIsUnsaved().set(false);
         } catch (IOException e) {
             System.err.println(e.getMessage());
         }

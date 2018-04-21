@@ -5,10 +5,12 @@ import algorithms.RandomClassifier;
 import data.DataSet;
 import dataprocessors.AppData;
 import dataprocessors.TSDProcessor;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.chart.LineChart;
@@ -25,8 +27,10 @@ import vilij.propertymanager.PropertyManager;
 import vilij.templates.ApplicationTemplate;
 import vilij.templates.UITemplate;
 
+import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static settings.AppPropertyTypes.*;
 import static vilij.settings.PropertyTypes.*;
@@ -63,6 +67,7 @@ public final class AppUI extends UITemplate {
     private ArrayList<Button> clusteringConfigs;
     private RandomClassifier randomClassifier;
     private Thread runningThread;
+    private ReentrantLock runButtonLock = new ReentrantLock();
 
 
     public Button getScrnshotButton() {
@@ -197,6 +202,8 @@ public final class AppUI extends UITemplate {
         chart = new LineChart<>(xAxis, yAxis);
         chart.setTitle(manager.getPropertyValue(CHART_TITLE.name()));
         chart.setAnimated(false);
+        chart.setHorizontalZeroLineVisible(false);
+        chart.setVerticalZeroLineVisible(false);
 
         textArea = new TextArea();
         textArea.setPrefSize(240, 190);
@@ -306,6 +313,7 @@ public final class AppUI extends UITemplate {
         setAlgorithmButtonActions();
         setSettingsButtonActions();
         setRunButtonActions();
+        setCloseButtonActions();
     }
 
     private void setTextAreaActions() {
@@ -490,24 +498,41 @@ public final class AppUI extends UITemplate {
     private void setRunButtonActions() {
         runButton.setOnAction(event -> {
             // TODO: Running the algorithm
+            runButton.setDisable(true);
             PropertyManager manager = applicationTemplate.manager;
-
+            int maxIterations = ((RunConfiguration) ((Button) radioGroup.getSelectedToggle().getUserData()).getUserData()).getInterations();
+            int updateInterval = ((RunConfiguration) ((Button) radioGroup.getSelectedToggle().getUserData()).getUserData()).getUpdateInterval();
+            boolean tocontinue = ((RunConfiguration) ((Button) radioGroup.getSelectedToggle().getUserData()).getUserData()).getContinuousRun();
+            DataSet dataSet = new DataSet();
+            try {
+                String[] lines = textArea.getText().split("\n");
+                for (String line : lines) {
+                    dataSet.addInstance(line);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             if (algorithmTypes.getSelectionModel().getSelectedItem().toString().equals(manager.getPropertyValue(CLASSIFICATION.name()))) {
-                try {
-                    DataSet dataSet = new DataSet();
-                    String[] lines = textArea.getText().split("\n");
-                    for (String line : lines) {
-                        dataSet.addInstance(line);
-                    }
-                    int maxIterations = ((RunConfiguration) ((Button) radioGroup.getSelectedToggle().getUserData()).getUserData()).getInterations();
-                    int updateInterval = ((RunConfiguration) ((Button) radioGroup.getSelectedToggle().getUserData()).getUserData()).getUpdateInterval();
-                    boolean tocontinue = ((RunConfiguration) ((Button) radioGroup.getSelectedToggle().getUserData()).getUserData()).getContinuousRun();
-                    randomClassifier = new RandomClassifier(dataSet, maxIterations, updateInterval, tocontinue);
-                    runningThread = new Thread(randomClassifier);
-                    runningThread.start();
+                randomClassifier = new RandomClassifier(dataSet, maxIterations, updateInterval, tocontinue);
+                runningThread = new Thread(randomClassifier);
+                runningThread.setDaemon(true);
+                runningThread.start();
+                if (tocontinue) {
+                    Task<Void> task = new Task<Void>() {
+                        @Override
+                        protected Void call() throws Exception {
+                            while (runningThread.isAlive()) {
+                            }
+                            return null;
+                        }
+                    };
+                    task.setOnSucceeded(e -> {
+                        runButton.setDisable(false);
+                    });
+                    new Thread(task).start();
+                }
+                else {
 
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
             }
             else if (algorithmTypes.getSelectionModel().getSelectedItem().toString().equals(manager.getPropertyValue(CLUSTERING.name()))) {
@@ -538,5 +563,12 @@ public final class AppUI extends UITemplate {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void setCloseButtonActions() {
+        Stage mainStage = DataVisualizer.getPrimaryStage();
+        mainStage.setOnCloseRequest(event -> {
+            System.exit(0);
+        });
     }
 }

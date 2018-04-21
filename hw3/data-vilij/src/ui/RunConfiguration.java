@@ -165,6 +165,12 @@ public class RunConfiguration {
                 }
             }
         });
+        continuousRunCheckBox.selectedProperty().addListener(new ChangeListener<Boolean>() {
+            @Override
+            public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+                continuousRun = newValue;
+            }
+        });
     }
 
     public void hideNumberOfLabels() {
