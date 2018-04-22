@@ -68,6 +68,9 @@ public final class AppActions implements ActionComponent {
     public void handleNewRequest() {
         ((AppUI) applicationTemplate.getUIComponent()).displayLeftPane();
         try {
+            if (((AppUI) applicationTemplate.getUIComponent()).getRunningThread() != null) {
+                ((AppUI) applicationTemplate.getUIComponent()).getRandomClassifier().setStop(true);
+            }
             if (!isUnsaved.get() || promptToSave()) {
                 applicationTemplate.getDataComponent().clear();
                 applicationTemplate.getUIComponent().clear();
@@ -103,21 +106,25 @@ public final class AppActions implements ActionComponent {
     }
     @Override
     public void handleLoadRequest() {
-        load();
-        if (isDataValid) {
-            ((AppUI) applicationTemplate.getUIComponent()).displayLeftPane();
-            ((AppUI) applicationTemplate.getUIComponent()).disableTextArea(true);
-            ((AppUI) applicationTemplate.getUIComponent()).disableDoneEditButton(true);
-            ((AppUI) applicationTemplate.getUIComponent()).disableSaveButton(true);
-            ((AppUI) applicationTemplate.getUIComponent()).disableNewButton(false);
-            ((AppUI) applicationTemplate.getUIComponent()).enableAlgorithmTypes(true);
-            ((AppUI) applicationTemplate.getUIComponent()).getSelectionPane().getChildren().clear();
-            isUnsaved.set(false);
-            ((AppUI) applicationTemplate.getUIComponent()).getScrnshotButton().setDisable(true);
-        }
-        else {
-            if (((AppUI) applicationTemplate.getUIComponent()).getCurrentText() == null) {
-                ((AppUI) applicationTemplate.getUIComponent()).enableAlgorithmTypes(false);
+        if (load()) {
+            if (((AppUI) applicationTemplate.getUIComponent()).getRunningThread() != null) {
+                ((AppUI) applicationTemplate.getUIComponent()).getRandomClassifier().setStop(true);
+            }
+            if (isDataValid) {
+                ((AppUI) applicationTemplate.getUIComponent()).displayLeftPane();
+                ((AppUI) applicationTemplate.getUIComponent()).disableTextArea(true);
+                ((AppUI) applicationTemplate.getUIComponent()).disableDoneEditButton(true);
+                ((AppUI) applicationTemplate.getUIComponent()).disableSaveButton(true);
+                ((AppUI) applicationTemplate.getUIComponent()).disableNewButton(false);
+                ((AppUI) applicationTemplate.getUIComponent()).enableAlgorithmTypes(true);
+                ((AppUI) applicationTemplate.getUIComponent()).getSelectionPane().getChildren().clear();
+                isUnsaved.set(false);
+                ((AppUI) applicationTemplate.getUIComponent()).getScrnshotButton().setDisable(true);
+                ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setVisible(false);
+            } else {
+                if (((AppUI) applicationTemplate.getUIComponent()).getCurrentText() == null) {
+                    ((AppUI) applicationTemplate.getUIComponent()).enableAlgorithmTypes(false);
+                }
             }
         }
     }
@@ -125,6 +132,13 @@ public final class AppActions implements ActionComponent {
     @Override
     public void handleExitRequest() {
         if ((((AppUI) applicationTemplate.getUIComponent()).getRunningThread() != null) && ((AppUI) applicationTemplate.getUIComponent()).getRunningThread().isAlive()) {
+            try {
+                if (!isUnsaved.get() || promptToSave()) {
+                    exitErrorHandlingHelper();
+                }
+            } catch (IOException e) {
+                errorHandlingHelper();
+            }
             exitErrorHandlingHelper();
         } else {
             try {
@@ -287,7 +301,7 @@ public final class AppActions implements ActionComponent {
 
     }
 
-    private void load() {
+    private boolean load() {
         PropertyManager manager = PropertyManager.getManager();
         FileChooser fileChooser = new FileChooser();
 
@@ -300,8 +314,12 @@ public final class AppActions implements ActionComponent {
             dataFilePath = selected.toPath();
             applicationTemplate.getDataComponent().loadData(dataFilePath);
         }
+        else {
+            return false;
+        }
         Stack<String> empty = new Stack<>();
         ((AppData) applicationTemplate.getDataComponent()).setExtraLines(empty);
+        return true;
     }
 
     private void errorHandlingHelper() {

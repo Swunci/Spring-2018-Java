@@ -55,7 +55,7 @@ functionality within the main workspace. -->
         <property name="DATA_INFORMATION_THREE" value="The labels are:"/>
         <property name="DATA_INFORMATION_DASH" value="-"/>
         <property name="NULL_LABEL" value="null"/>
-        <property name="CLASSIFICATION_ALGORITHM_NAME_1" value="Classification Algorithm 1"/>
+        <property name="CLASSIFICATION_ALGORITHM_NAME_1" value="Random Classifier"/>
         <property name="CLASSIFICATION_ALGORITHM_NAME_2" value="Classification Algorithm 2"/>
         <property name="CLASSIFICATION_ALGORITHM_NAME_3" value="Classification Algorithm 3"/>
         <property name="CLUSTERING_ALGORITHM_NAME_1" value="Clustering Algorithm 1"/>
@@ -71,6 +71,7 @@ functionality within the main workspace. -->
         <property name="SAVE_IMAGE_TITLE" value="Save Image"/>
         <property name="SAVE_FILE_EXT_DESC" value="PNG file"/>
         <property name="SAVE_IMAGE_FILE_EXT" value="png"/>
+        <property name="RESUME_BUTTON_TEXT" value="Resume"/>
     </property_list>
     <property_options_list/>
 </properties>

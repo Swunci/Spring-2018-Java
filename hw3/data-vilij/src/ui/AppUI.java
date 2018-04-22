@@ -145,6 +145,11 @@ public final class AppUI extends UITemplate {
     public void setChoices(ObservableList<String> choices) {
         this.choices = choices;
     }
+
+    public void setRunningThread(Thread runningThread) {
+        this.runningThread = runningThread;
+    }
+
     public AppUI(Stage primaryStage, ApplicationTemplate applicationTemplate) {
         super(primaryStage, applicationTemplate);
         this.applicationTemplate = applicationTemplate;
@@ -473,6 +478,7 @@ public final class AppUI extends UITemplate {
             public void changed(ObservableValue<? extends Toggle> observable, Toggle oldValue, Toggle newValue) {
                 if (radioGroup.getSelectedToggle() != null) {
                     runButton.setVisible(true);
+                    runButton.setDisable(false);
                 }
             }
         });
@@ -500,6 +506,7 @@ public final class AppUI extends UITemplate {
             // TODO: Running the algorithm
             runButton.setDisable(true);
             PropertyManager manager = applicationTemplate.manager;
+            runButton.setText(manager.getPropertyValue(RUN_BUTTON_TEXT.name()));
             int maxIterations = ((RunConfiguration) ((Button) radioGroup.getSelectedToggle().getUserData()).getUserData()).getInterations();
             int updateInterval = ((RunConfiguration) ((Button) radioGroup.getSelectedToggle().getUserData()).getUserData()).getUpdateInterval();
             boolean tocontinue = ((RunConfiguration) ((Button) radioGroup.getSelectedToggle().getUserData()).getUserData()).getContinuousRun();
@@ -513,11 +520,12 @@ public final class AppUI extends UITemplate {
                 e.printStackTrace();
             }
             if (algorithmTypes.getSelectionModel().getSelectedItem().toString().equals(manager.getPropertyValue(CLASSIFICATION.name()))) {
-                randomClassifier = new RandomClassifier(dataSet, maxIterations, updateInterval, tocontinue);
-                runningThread = new Thread(randomClassifier);
-                runningThread.setDaemon(true);
-                runningThread.start();
                 if (tocontinue) {
+                    scrnshotButton.setDisable(true);
+                    randomClassifier = new RandomClassifier(dataSet, maxIterations, updateInterval, tocontinue);
+                    runningThread = new Thread(randomClassifier);
+                    runningThread.setDaemon(true);
+                    runningThread.start();
                     Task<Void> task = new Task<Void>() {
                         @Override
                         protected Void call() throws Exception {
@@ -532,7 +540,17 @@ public final class AppUI extends UITemplate {
                     new Thread(task).start();
                 }
                 else {
-
+                    if (runningThread == null) {
+                        randomClassifier = new RandomClassifier(dataSet, maxIterations, updateInterval, tocontinue);
+                        runningThread = new Thread(randomClassifier);
+                        runningThread.setDaemon(true);
+                        runningThread.start();
+                    }
+                    else {
+                        synchronized (runningThread) {
+                            runningThread.notify();
+                        }
+                    }
                 }
             }
             else if (algorithmTypes.getSelectionModel().getSelectedItem().toString().equals(manager.getPropertyValue(CLUSTERING.name()))) {

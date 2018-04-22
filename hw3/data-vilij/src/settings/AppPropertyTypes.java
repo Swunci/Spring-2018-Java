@@ -73,4 +73,5 @@ public enum AppPropertyTypes {
     SAVE_IMAGE_TITLE,
     SAVE_FILE_EXT_DESC,
     SAVE_IMAGE_FILE_EXT,
+    RESUME_BUTTON_TEXT,
 }

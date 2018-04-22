@@ -184,6 +184,10 @@ public class RunConfiguration {
                 errorHandler();
                 event.consume();
             }
+            else {
+                PropertyManager manager = applicationTemplate.manager;
+                ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setText(manager.getPropertyValue(AppPropertyTypes.RUN_BUTTON_TEXT.name()));
+            }
         });
     }
 
