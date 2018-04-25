@@ -67,8 +67,6 @@ public final class AppUI extends UITemplate {
     private ArrayList<Button> clusteringConfigs;
     private RandomClassifier randomClassifier;
     private Thread runningThread;
-    private ReentrantLock runButtonLock = new ReentrantLock();
-
 
     public Button getScrnshotButton() {
         return scrnshotButton;

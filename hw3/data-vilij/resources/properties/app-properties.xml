@@ -16,14 +16,19 @@ functionality within the main workspace. -->
 
         <!-- WARNING MESSAGES -->
         <property name="EXIT_WHILE_RUNNING_WARNING"
-                  value="An algorithm is running. If you exit now, all unsaved changes will be lost. Are you sure?"/>
-
+                  value="An algorithm is running. Are you sure you want to exit?"/>
+        <property name="NEW_WHILE_RUNNING_WARNING"
+                  value="An algorithm is running. Are you sure you want create new data?"/>
+        <property name="LOAD_WHILE_RUNNING_WARNING"
+                  value="An algorithm is running. Are you sure you want to load new data?"/>
         <!-- ERROR MESSAGES -->
         <property name="RESOURCE_SUBDIR_NOT_FOUND" value="Directory not found under resources."/>
 
         <!-- APPLICATION-SPECIFIC MESSAGE TITLES -->
         <property name="SAVE_UNSAVED_WORK_TITLE" value="Save Current Work"/>
         <property name="EXIT_TITLE" value="Exit"/>
+        <property name="NEW_TITLE" value="New Data"/>
+        <property name="LOAD_TITLE" value="Load Data"/>
 
         <!-- APPLICATION-SPECIFIC MESSAGES -->
         <property name="SAVE_UNSAVED_WORK" value="Would you like to save current work?"/>

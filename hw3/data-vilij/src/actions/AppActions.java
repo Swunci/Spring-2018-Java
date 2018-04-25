@@ -66,27 +66,11 @@ public final class AppActions implements ActionComponent {
 
     @Override
     public void handleNewRequest() {
-        ((AppUI) applicationTemplate.getUIComponent()).displayLeftPane();
-        try {
-            if (((AppUI) applicationTemplate.getUIComponent()).getRunningThread() != null) {
-                ((AppUI) applicationTemplate.getUIComponent()).getRandomClassifier().setStop(true);
-            }
-            if (!isUnsaved.get() || promptToSave()) {
-                applicationTemplate.getDataComponent().clear();
-                applicationTemplate.getUIComponent().clear();
-                isUnsaved.set(false);
-                dataFilePath = null;
-                ((AppUI) applicationTemplate.getUIComponent()).disableScrnshotButton(true);
-                ((AppUI) applicationTemplate.getUIComponent()).setInformationText("");
-                ((AppUI) applicationTemplate.getUIComponent()).disableTextArea(false);
-                ((AppUI) applicationTemplate.getUIComponent()).enableAlgorithmTypes(false);
-                ((AppUI) applicationTemplate.getUIComponent()).disableDoneEditButton(false);
-                ((AppUI) applicationTemplate.getUIComponent()).getDoneEditButton().setText("Done");
-                ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setVisible(false);
-                ((AppUI) applicationTemplate.getUIComponent()).getSelectionPane().getChildren().clear();
-            }
-            ((AppUI) applicationTemplate.getUIComponent()).disableNewButton(false);
-        } catch (IOException e) { errorHandlingHelper(); }
+        if ((((AppUI) applicationTemplate.getUIComponent()).getRunningThread() != null) && ((AppUI) applicationTemplate.getUIComponent()).getRunningThread().isAlive()) {
+            newErrorHandlingHelper();
+        } else {
+            newRequestActions();
+        }
     }
 
     @Override
@@ -106,26 +90,11 @@ public final class AppActions implements ActionComponent {
     }
     @Override
     public void handleLoadRequest() {
-        if (load()) {
-            if (((AppUI) applicationTemplate.getUIComponent()).getRunningThread() != null) {
-                ((AppUI) applicationTemplate.getUIComponent()).getRandomClassifier().setStop(true);
-            }
-            if (isDataValid) {
-                ((AppUI) applicationTemplate.getUIComponent()).displayLeftPane();
-                ((AppUI) applicationTemplate.getUIComponent()).disableTextArea(true);
-                ((AppUI) applicationTemplate.getUIComponent()).disableDoneEditButton(true);
-                ((AppUI) applicationTemplate.getUIComponent()).disableSaveButton(true);
-                ((AppUI) applicationTemplate.getUIComponent()).disableNewButton(false);
-                ((AppUI) applicationTemplate.getUIComponent()).enableAlgorithmTypes(true);
-                ((AppUI) applicationTemplate.getUIComponent()).getSelectionPane().getChildren().clear();
-                isUnsaved.set(false);
-                ((AppUI) applicationTemplate.getUIComponent()).getScrnshotButton().setDisable(true);
-                ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setVisible(false);
-            } else {
-                if (((AppUI) applicationTemplate.getUIComponent()).getCurrentText() == null) {
-                    ((AppUI) applicationTemplate.getUIComponent()).enableAlgorithmTypes(false);
-                }
-            }
+        if ((((AppUI) applicationTemplate.getUIComponent()).getRunningThread() != null) && ((AppUI) applicationTemplate.getUIComponent()).getRunningThread().isAlive()) {
+            loadErrorHandlingHelper();
+        }
+        else {
+            loadRequestActions();
         }
     }
 
@@ -351,7 +320,7 @@ public final class AppActions implements ActionComponent {
         }
     }
 
-    public void exitErrorHandlingHelper() {
+    private void exitErrorHandlingHelper() {
         PropertyManager manager = applicationTemplate.manager;
         ConfirmationDialog dialog = ConfirmationDialog.getDialog();
         String errTitle = manager.getPropertyValue(AppPropertyTypes.EXIT_TITLE.name());
@@ -363,6 +332,95 @@ public final class AppActions implements ActionComponent {
         }
         if (dialog.getSelectedOption().equals(ConfirmationDialog.Option.YES)) {
             System.exit(0);
+        }
+    }
+
+    private void newErrorHandlingHelper() {
+        PropertyManager manager = applicationTemplate.manager;
+        ConfirmationDialog dialog = ConfirmationDialog.getDialog();
+        String errTitle = manager.getPropertyValue(AppPropertyTypes.NEW_TITLE.name());
+        String errMsg = manager.getPropertyValue(AppPropertyTypes.NEW_WHILE_RUNNING_WARNING.name());
+        dialog.show(errTitle, errMsg);
+
+        if (dialog.getSelectedOption() == null) {
+            return;
+        }
+        if (dialog.getSelectedOption().equals(ConfirmationDialog.Option.YES)) {
+            newRequestActions();
+        }
+    }
+    private void loadErrorHandlingHelper() {
+        PropertyManager manager = applicationTemplate.manager;
+        ConfirmationDialog dialog = ConfirmationDialog.getDialog();
+        String errTitle = manager.getPropertyValue(AppPropertyTypes.LOAD_TITLE.name());
+        String errMsg = manager.getPropertyValue(AppPropertyTypes.LOAD_WHILE_RUNNING_WARNING.name());
+        dialog.show(errTitle, errMsg);
+
+        if (dialog.getSelectedOption() == null) {
+            return;
+        }
+        if (dialog.getSelectedOption().equals(ConfirmationDialog.Option.YES)) {
+            loadRequestActions();
+        }
+    }
+
+    private void newRequestActions() {
+        PropertyManager manager = applicationTemplate.manager;
+        ((AppUI) applicationTemplate.getUIComponent()).displayLeftPane();
+        try {
+            if (((AppUI) applicationTemplate.getUIComponent()).getRunningThread() != null) {
+                ((AppUI) applicationTemplate.getUIComponent()).getRandomClassifier().setStop(true);
+                ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setText(manager.getPropertyValue(RUN_BUTTON_TEXT.name()));
+                if (!(((AppUI) applicationTemplate.getUIComponent()).getRandomClassifier().tocontinue())) {
+                    ((AppUI) applicationTemplate.getUIComponent()).setRunningThread(null);
+                }
+            }
+            if (!isUnsaved.get() || promptToSave()) {
+                applicationTemplate.getDataComponent().clear();
+                applicationTemplate.getUIComponent().clear();
+                isUnsaved.set(false);
+                dataFilePath = null;
+                ((AppUI) applicationTemplate.getUIComponent()).disableScrnshotButton(true);
+                ((AppUI) applicationTemplate.getUIComponent()).setInformationText("");
+                ((AppUI) applicationTemplate.getUIComponent()).disableTextArea(false);
+                ((AppUI) applicationTemplate.getUIComponent()).enableAlgorithmTypes(false);
+                ((AppUI) applicationTemplate.getUIComponent()).disableDoneEditButton(false);
+                ((AppUI) applicationTemplate.getUIComponent()).getDoneEditButton().setText(manager.getPropertyValue(DONE_BUTTON_TEXT.name()));
+                ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setVisible(false);
+                ((AppUI) applicationTemplate.getUIComponent()).getSelectionPane().getChildren().clear();
+            }
+            ((AppUI) applicationTemplate.getUIComponent()).disableNewButton(false);
+            ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setDisable(false);
+        } catch (IOException e) {
+            errorHandlingHelper();
+        }
+    }
+    private void loadRequestActions() {
+        PropertyManager manager = applicationTemplate.manager;
+        if (load()) {
+            if (((AppUI) applicationTemplate.getUIComponent()).getRunningThread() != null) {
+                ((AppUI) applicationTemplate.getUIComponent()).getRandomClassifier().setStop(true);
+                ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setText(manager.getPropertyValue(RUN_BUTTON_TEXT.name()));
+                if (!(((AppUI) applicationTemplate.getUIComponent()).getRandomClassifier().tocontinue())) {
+                    ((AppUI) applicationTemplate.getUIComponent()).setRunningThread(null);
+                }
+            }
+            if (isDataValid) {
+                ((AppUI) applicationTemplate.getUIComponent()).displayLeftPane();
+                ((AppUI) applicationTemplate.getUIComponent()).disableTextArea(true);
+                ((AppUI) applicationTemplate.getUIComponent()).disableDoneEditButton(true);
+                ((AppUI) applicationTemplate.getUIComponent()).disableSaveButton(true);
+                ((AppUI) applicationTemplate.getUIComponent()).disableNewButton(false);
+                ((AppUI) applicationTemplate.getUIComponent()).enableAlgorithmTypes(true);
+                ((AppUI) applicationTemplate.getUIComponent()).getSelectionPane().getChildren().clear();
+                isUnsaved.set(false);
+                ((AppUI) applicationTemplate.getUIComponent()).getScrnshotButton().setDisable(true);
+                ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setVisible(false);
+            } else {
+                if (((AppUI) applicationTemplate.getUIComponent()).getCurrentText() == null) {
+                    ((AppUI) applicationTemplate.getUIComponent()).enableAlgorithmTypes(false);
+                }
+            }
         }
     }
 }

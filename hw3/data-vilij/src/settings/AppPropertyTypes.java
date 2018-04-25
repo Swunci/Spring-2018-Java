@@ -22,10 +22,14 @@ public enum AppPropertyTypes {
     /* error messages */
     RESOURCE_SUBDIR_NOT_FOUND,
     EXIT_WHILE_RUNNING_WARNING,
+    NEW_WHILE_RUNNING_WARNING,
+    LOAD_WHILE_RUNNING_WARNING,
 
     /* application-specific message titles */
     SAVE_UNSAVED_WORK_TITLE,
     EXIT_TITLE,
+    NEW_TITLE,
+    LOAD_TITLE,
 
     /* application-specific messages */
     SAVE_UNSAVED_WORK,

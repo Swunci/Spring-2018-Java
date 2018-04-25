@@ -94,6 +94,9 @@ public class RandomClassifier extends Classifier {
             if (stop) {
                 try {
                     synchronized (((AppUI) applicationTemplate.getUIComponent()).getRunningThread()) {
+                        Platform.runLater(() -> {
+                            ((AppUI) applicationTemplate.getUIComponent()).setRunningThread(null);
+                        });
                         ((AppUI) applicationTemplate.getUIComponent()).getRunningThread().wait();
                     }
                 } catch (InterruptedException e) {
