@@ -50,12 +50,20 @@ public final class AppActions implements ActionComponent {
     SimpleBooleanProperty isUnsaved;
 
     private boolean isDataValid = false;
+    private boolean isLoadedData = false;
 
-    public void clearDataFilePath() { dataFilePath = null; }
-    public void setIsDataValid(boolean value) { isDataValid = value; }
+    public void clearDataFilePath() {
+        dataFilePath = null; }
 
-    public SimpleBooleanProperty getIsUnsaved() { return isUnsaved; }
+    public boolean getIsLoadedData() {
+        return isLoadedData;
+    }
 
+    public void setIsDataValid(boolean value) {
+        isDataValid = value; }
+
+    public SimpleBooleanProperty getIsUnsaved() {
+        return isUnsaved; }
 
     public AppActions(ApplicationTemplate applicationTemplate) {
         this.applicationTemplate = applicationTemplate;
@@ -389,38 +397,46 @@ public final class AppActions implements ActionComponent {
                 ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setVisible(false);
                 ((AppUI) applicationTemplate.getUIComponent()).getSelectionPane().getChildren().clear();
             }
-            ((AppUI) applicationTemplate.getUIComponent()).disableNewButton(false);
-            ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setDisable(false);
+            ((AppUI) applicationTemplate.getUIComponent()).resetUI();
+            isLoadedData = false;
         } catch (IOException e) {
             errorHandlingHelper();
         }
     }
     private void loadRequestActions() {
         PropertyManager manager = applicationTemplate.manager;
-        if (load()) {
-            if (((AppUI) applicationTemplate.getUIComponent()).getRunningThread() != null) {
-                ((AppUI) applicationTemplate.getUIComponent()).getRandomClassifier().setStop(true);
-                ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setText(manager.getPropertyValue(RUN_BUTTON_TEXT.name()));
-                if (!(((AppUI) applicationTemplate.getUIComponent()).getRandomClassifier().tocontinue())) {
-                    ((AppUI) applicationTemplate.getUIComponent()).setRunningThread(null);
+        try {
+            if (!isUnsaved.get() || promptToSave()) {
+                if (load()) {
+                    if (((AppUI) applicationTemplate.getUIComponent()).getRunningThread() != null) {
+                        ((AppUI) applicationTemplate.getUIComponent()).getRandomClassifier().setStop(true);
+                        ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setText(manager.getPropertyValue(RUN_BUTTON_TEXT.name()));
+                        if (!(((AppUI) applicationTemplate.getUIComponent()).getRandomClassifier().tocontinue())) {
+                            ((AppUI) applicationTemplate.getUIComponent()).setRunningThread(null);
+                        }
+                    }
+                    if (isDataValid) {
+                        ((AppUI) applicationTemplate.getUIComponent()).displayLeftPane();
+                        ((AppUI) applicationTemplate.getUIComponent()).disableTextArea(true);
+                        ((AppUI) applicationTemplate.getUIComponent()).disableDoneEditButton(true);
+                        ((AppUI) applicationTemplate.getUIComponent()).disableSaveButton(true);
+                        ((AppUI) applicationTemplate.getUIComponent()).disableNewButton(false);
+                        ((AppUI) applicationTemplate.getUIComponent()).enableAlgorithmTypes(true);
+                        ((AppUI) applicationTemplate.getUIComponent()).getSelectionPane().getChildren().clear();
+                        isUnsaved.set(false);
+                        ((AppUI) applicationTemplate.getUIComponent()).getScrnshotButton().setDisable(true);
+                        ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setVisible(false);
+                        isLoadedData = true;
+                        ((AppUI) applicationTemplate.getUIComponent()).resetUI();
+                    } else {
+                        if (((AppUI) applicationTemplate.getUIComponent()).getCurrentText() == null) {
+                            ((AppUI) applicationTemplate.getUIComponent()).enableAlgorithmTypes(false);
+                        }
+                    }
                 }
             }
-            if (isDataValid) {
-                ((AppUI) applicationTemplate.getUIComponent()).displayLeftPane();
-                ((AppUI) applicationTemplate.getUIComponent()).disableTextArea(true);
-                ((AppUI) applicationTemplate.getUIComponent()).disableDoneEditButton(true);
-                ((AppUI) applicationTemplate.getUIComponent()).disableSaveButton(true);
-                ((AppUI) applicationTemplate.getUIComponent()).disableNewButton(false);
-                ((AppUI) applicationTemplate.getUIComponent()).enableAlgorithmTypes(true);
-                ((AppUI) applicationTemplate.getUIComponent()).getSelectionPane().getChildren().clear();
-                isUnsaved.set(false);
-                ((AppUI) applicationTemplate.getUIComponent()).getScrnshotButton().setDisable(true);
-                ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setVisible(false);
-            } else {
-                if (((AppUI) applicationTemplate.getUIComponent()).getCurrentText() == null) {
-                    ((AppUI) applicationTemplate.getUIComponent()).enableAlgorithmTypes(false);
-                }
-            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

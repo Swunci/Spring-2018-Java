@@ -1,5 +1,6 @@
 package algorithms;
 
+import actions.AppActions;
 import algorithms.Classifier;
 import data.DataSet;
 
@@ -133,7 +134,12 @@ public class RandomClassifier extends Classifier {
         }
         ((AppUI) applicationTemplate.getUIComponent()).setRunningThread(null);
         ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setDisable(false);
+        if (!((AppActions) applicationTemplate.getActionComponent()).getIsLoadedData()) {
+            ((AppUI) applicationTemplate.getUIComponent()).getDoneEditButton().setDisable(false);
+        }
         ((AppUI) applicationTemplate.getUIComponent()).getScrnshotButton().setDisable(false);
+        ((AppUI) applicationTemplate.getUIComponent()).getAlgorithmTypePane().setDisable(false);
+        ((AppUI) applicationTemplate.getUIComponent()).getSelectionPane().setDisable(false);
     }
 
     private void nonContinuousRun() {
@@ -179,5 +185,10 @@ public class RandomClassifier extends Classifier {
         }
         ((AppUI) applicationTemplate.getUIComponent()).setRunningThread(null);
         ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setDisable(false);
+        if (!((AppActions) applicationTemplate.getActionComponent()).getIsLoadedData()) {
+            ((AppUI) applicationTemplate.getUIComponent()).getDoneEditButton().setDisable(false);
+        }
+        ((AppUI) applicationTemplate.getUIComponent()).getAlgorithmTypePane().setDisable(false);
+        ((AppUI) applicationTemplate.getUIComponent()).getSelectionPane().setDisable(false);
     }
 }

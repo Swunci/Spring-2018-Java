@@ -390,8 +390,6 @@ public final class AppUI extends UITemplate {
                         setAlgorithmTypesActions();
                         selectionPane.getChildren().clear();
                         loadDataInformation(data.size(), labelNames.size(), labelNames, "");
-
-
                     } else {
                         ((AppActions) applicationTemplate.getActionComponent()).saveErrorHandlingHelper(x);
                         enableAlgorithmTypes(false);
@@ -503,6 +501,9 @@ public final class AppUI extends UITemplate {
         runButton.setOnAction(event -> {
             // TODO: Running the algorithm
             runButton.setDisable(true);
+            doneEditButton.setDisable(true);
+            algorithmTypePane.setDisable(true);
+            selectionPane.setDisable(true);
             PropertyManager manager = applicationTemplate.manager;
             runButton.setText(manager.getPropertyValue(RUN_BUTTON_TEXT.name()));
             int maxIterations = ((RunConfiguration) ((Button) radioGroup.getSelectedToggle().getUserData()).getUserData()).getInterations();
@@ -586,5 +587,12 @@ public final class AppUI extends UITemplate {
         mainStage.setOnCloseRequest(event -> {
             System.exit(0);
         });
+    }
+
+    public void resetUI() {
+        newButton.setDisable(false);
+        runButton.setDisable(false);
+        algorithmTypePane.setDisable(false);
+        selectionPane.setDisable(false);
     }
 }

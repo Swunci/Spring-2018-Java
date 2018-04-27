@@ -108,7 +108,7 @@ public final class TSDProcessor {
 
                 if (counter == 0) {
                     xMax = point.getX();
-                    xMin = point.getY();
+                    xMin = point.getX();
                 } else {
                     if (point.getX() > xMax)
                         xMax = point.getX();
@@ -175,6 +175,10 @@ public final class TSDProcessor {
     }
 
     public double calculateY(double xCoefficient, double yCoefficient, double c, double x) {
+        Random random = new Random();
+        while (yCoefficient == 0) {
+            yCoefficient = new Double(random.nextDouble() * 100).intValue();
+        }
         return -1 * (c + xCoefficient * x) / yCoefficient;
     }
 
