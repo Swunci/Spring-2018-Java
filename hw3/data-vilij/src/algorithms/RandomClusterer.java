@@ -93,7 +93,7 @@ public class RandomClusterer extends Clusterer {
                 });
             }
             try {
-                Thread.sleep(250);
+                Thread.sleep(500);
             } catch (Exception e) {
                 e.printStackTrace();
             }

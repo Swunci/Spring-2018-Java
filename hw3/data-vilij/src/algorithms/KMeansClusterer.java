@@ -127,6 +127,18 @@ public class KMeansClusterer extends Clusterer {
         initializeCentroids();
         int iteration = 1;
         while (iteration++ <= maxIterations & tocontinue.get()) {
+            if (stop) {
+                try {
+                    synchronized (((AppUI) applicationTemplate.getUIComponent()).getRunningThread()) {
+                        Platform.runLater(() -> {
+                            ((AppUI) applicationTemplate.getUIComponent()).setRunningThread(null);
+                        });
+                        ((AppUI) applicationTemplate.getUIComponent()).getRunningThread().wait();
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
             assignLabels();
             if (iteration % updateInterval == 0) {
                 Platform.runLater(() -> {
