@@ -9,13 +9,7 @@ import javafx.scene.chart.XYChart;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
-import settings.AppPropertyTypes;
 import ui.AppUI;
-import ui.DataVisualizer;
-import vilij.components.Dialog;
-import vilij.components.ErrorDialog;
-import vilij.propertymanager.PropertyManager;
-import vilij.settings.PropertyTypes;
 import vilij.templates.ApplicationTemplate;
 
 import java.util.*;
@@ -48,6 +42,14 @@ public final class TSDProcessor {
     private Map<String, Point2D> dataPoints;
     private double yMin, yMax, xMin, xMax;
     private int counter = 0;
+
+    public Map<String, String>  getDataLabels() {
+        return dataLabels;
+    }
+
+    public Map<String, Point2D> getDataPoints() {
+        return dataPoints;
+    }
 
     public void setApplicationTemplate(ApplicationTemplate applicationTemplate) {
         this.applicationTemplate = applicationTemplate;
@@ -159,7 +161,7 @@ public final class TSDProcessor {
                 xMax += xMax / 2.0;
             }
 
-            List<Integer> output = ((AppUI) applicationTemplate.getUIComponent()).getRandomClassifier().getOutput();
+            List<Integer> output = ((RandomClassifier) (((AppUI) applicationTemplate.getUIComponent()).getAlgorithm())).getOutput();
             yMin = calculateY(output.get(0), output.get(1), output.get(2), xMin);
             yMax = calculateY(output.get(0), output.get(1), output.get(2), xMax);
 

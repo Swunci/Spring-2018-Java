@@ -1,7 +1,6 @@
 package algorithms;
 
 import data.DataSet;
-
 import javafx.application.Platform;
 import settings.AppPropertyTypes;
 import ui.AppUI;
@@ -9,33 +8,26 @@ import ui.DataVisualizer;
 import vilij.propertymanager.PropertyManager;
 import vilij.templates.ApplicationTemplate;
 
-import java.io.IOException;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static settings.AppPropertyTypes.RUN_BUTTON_TEXT;
 
-/**
- * @author Ritwik Banerjee
- */
-public class RandomClassifier extends Classifier {
 
-    private static final Random RAND = new Random();
+public class RandomClusterer extends Clusterer {
 
     ApplicationTemplate applicationTemplate = DataVisualizer.getApplicationTemplate();
 
-    @SuppressWarnings("FieldCanBeLocal")
-    // this mock classifier doesn't actually use the data, but a real classifier will
     private DataSet dataset;
 
     private final int maxIterations;
+
     private final int updateInterval;
+
     private boolean stop = false;
 
-    // currently, this value does not change after instantiation
     private final AtomicBoolean tocontinue;
+
+    private boolean continuousRun;
 
     @Override
     public int getMaxIterations() {
@@ -52,42 +44,29 @@ public class RandomClassifier extends Classifier {
         return tocontinue.get();
     }
 
-    public boolean getContinuousRun() { return tocontinue.get(); }
+    public boolean getContinuousRun() { return continuousRun; }
 
     public void setStop(boolean stop) {
         this.stop = stop;
     }
 
-    public RandomClassifier(DataSet dataset,
-                            int maxIterations,
-                            int updateInterval,
-                            boolean tocontinue) {
-        this.dataset = dataset;
+    public RandomClusterer(DataSet dataSet, int maxIterations, int updateInterval, int numberOfClusters, boolean continuousRun) {
+        super(numberOfClusters);
+        dataset = dataSet;
         this.maxIterations = maxIterations;
         this.updateInterval = updateInterval;
-        this.tocontinue = new AtomicBoolean(tocontinue);
+        this.continuousRun = continuousRun;
+        this.tocontinue = new AtomicBoolean(false);
     }
 
     @Override
     public void run() {
-        if (tocontinue()) {
+        if(continuousRun) {
             continuousRun();
         }
         else {
             nonContinuousRun();
         }
-    }
-
-    // for internal viewing only
-    protected void flush() {
-        System.out.printf("%d\t%d\t%d%n", output.get(0), output.get(1), output.get(2));
-    }
-
-    /** A placeholder main method to just make sure this code runs smoothly */
-    public static void main(String... args) throws IOException {
-        DataSet          dataset    = DataSet.fromTSDFile(Paths.get("/path/to/some-data.tsd"));
-        RandomClassifier classifier = new RandomClassifier(dataset, 100, 5, true);
-        classifier.run(); // no multithreading yet
     }
 
     private void continuousRun() {
@@ -104,30 +83,17 @@ public class RandomClassifier extends Classifier {
                     e.printStackTrace();
                 }
             }
-            int xCoefficient = new Double(RAND.nextDouble() * 100).intValue();
-            int yCoefficient = new Double(RAND.nextDouble() * 100).intValue();
-            int constant     = new Double(RAND.nextDouble() * 100).intValue();
-
-            // this is the real output of the classifier
-            output = Arrays.asList(xCoefficient, yCoefficient, constant);
-
-            // everything below is just for internal viewing of how the output is changing
-            // in the final project, such changes will be dynamically visible in the UI
+            for (String instanceName : dataset.getLabels().keySet()) {
+                dataset.updateLabel(instanceName, String.valueOf((int) (Math.random() * numberOfClusters)));
+            }
             if (i % updateInterval == 0) {
-                System.out.printf("Iteration number %d: ", i); //
-                flush();
+                System.out.printf("Iteration number %d: \n", i);
                 Platform.runLater(() -> {
-                    ((AppUI) applicationTemplate.getUIComponent()).updateChart();
+                    ((AppUI) applicationTemplate.getUIComponent()).updateChart(dataset.getLabels(), dataset.getLocations());
                 });
             }
-            if (i > maxIterations * .6 && RAND.nextDouble() < 0.05) {
-                System.out.printf("Iteration number %d: ", i);
-                flush();
-                ((AppUI) applicationTemplate.getUIComponent()).setRunningThread(null);
-                break;
-            }
             try {
-                Thread.sleep(500);
+                Thread.sleep(250);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -137,21 +103,14 @@ public class RandomClassifier extends Classifier {
 
     private void nonContinuousRun() {
         for (int i = 1; i <= maxIterations; i++) {
-            int xCoefficient = new Double(RAND.nextDouble() * 100).intValue();
-            int yCoefficient = new Double(RAND.nextDouble() * 100).intValue();
-            int constant     = new Double(RAND.nextDouble() * 100).intValue();
-
-            // this is the real output of the classifier
-            output = Arrays.asList(xCoefficient, yCoefficient, constant);
-
-            // everything below is just for internal viewing of how the output is changing
-            // in the final project, such changes will be dynamically visible in the UI
+            for (String instanceName : dataset.getLabels().keySet()) {
+                dataset.updateLabel(instanceName, String.valueOf((int) (Math.random() * numberOfClusters)));
+            }
             if (i % updateInterval == 0) {
-                System.out.printf("Iteration number %d: ", i); //
-                flush();
+                System.out.printf("Iteration number %d: \n", i);
+                PropertyManager manager = applicationTemplate.manager;
                 Platform.runLater(() -> {
-                    PropertyManager manager = applicationTemplate.manager;
-                    ((AppUI) applicationTemplate.getUIComponent()).updateChart();
+                    ((AppUI) applicationTemplate.getUIComponent()).updateChart(dataset.getLabels(), dataset.getLocations());
                     ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setText(manager.getPropertyValue(AppPropertyTypes.RESUME_BUTTON_TEXT.name()));
                     if (((AppUI) applicationTemplate.getUIComponent()).getRunningThread() == null) {
                         ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setText(manager.getPropertyValue(RUN_BUTTON_TEXT.name()));
@@ -168,13 +127,6 @@ public class RandomClassifier extends Classifier {
                         e.printStackTrace();
                     }
                 }
-            }
-            if (i > maxIterations * .6 && RAND.nextDouble() < 0.05) {
-                System.out.printf("Iteration number %d: ", i);
-                flush();
-                ((AppUI) applicationTemplate.getUIComponent()).setAlgorithm(null);
-                ((AppUI) applicationTemplate.getUIComponent()).setRunningThread(null);
-                break;
             }
         }
         ((AppUI) applicationTemplate.getUIComponent()).algorithmFinished();

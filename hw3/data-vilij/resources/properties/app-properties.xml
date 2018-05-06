@@ -60,12 +60,6 @@ functionality within the main workspace. -->
         <property name="DATA_INFORMATION_THREE" value="The labels are:"/>
         <property name="DATA_INFORMATION_DASH" value="-"/>
         <property name="NULL_LABEL" value="null"/>
-        <property name="CLASSIFICATION_ALGORITHM_NAME_1" value="Random Classifier"/>
-        <property name="CLASSIFICATION_ALGORITHM_NAME_2" value="Classification Algorithm 2"/>
-        <property name="CLASSIFICATION_ALGORITHM_NAME_3" value="Classification Algorithm 3"/>
-        <property name="CLUSTERING_ALGORITHM_NAME_1" value="Clustering Algorithm 1"/>
-        <property name="CLUSTERING_ALGORITHM_NAME_2" value="Clustering Algorithm 2"/>
-        <property name="CLUSTERING_ALGORITHM_NAME_3" value="Clustering Algorithm 3"/>
         <property name="RUN_CONFIGURATION_TITLE" value="Run Configuration"/>
         <property name="RUN_CONFIGURATION_ITERATIONS" value="Iterations:"/>
         <property name="RUN_CONFIGURATION_UPDATE_INTERVAL" value="Update Interval:"/>
@@ -77,6 +71,23 @@ functionality within the main workspace. -->
         <property name="SAVE_FILE_EXT_DESC" value="PNG file"/>
         <property name="SAVE_IMAGE_FILE_EXT" value="png"/>
         <property name="RESUME_BUTTON_TEXT" value="Resume"/>
+
+        <!-- ALGORITHM CLASS NAMES -->
+        <property name="CLASSIFIER" value="Classifier"/>
+        <property name="CLUSTERER" value="Clusterer"/>
+        <property name="RANDOMCLASSIFIER" value="algorithms.RandomClassifier"/>
+        <property name="RANDOMCLUSTERER" value="algorithms.RandomClusterer"/>
+        <property name="KMEANSCLUSTERER" value="algorithms.KMeansClusterer"/>
+
+
+        <!-- ALGORITHM NAMES -->
+        <property name="CLASSIFICATION_ALGORITHM_NAME_1" value="Random Classifier"/>
+        <property name="CLASSIFICATION_ALGORITHM_NAME_2" value="随机分类器"/>
+        <property name="CLASSIFICATION_ALGORITHM_NAME_3" value="ランダム分類器"/>
+        <property name="CLUSTERING_ALGORITHM_NAME_1" value="Random Clusterer"/>
+        <property name="CLUSTERING_ALGORITHM_NAME_2" value="KMeans Clusterer"/>
+        <property name="CLUSTERING_ALGORITHM_NAME_3" value="무작위 클러스터러"/>
+
     </property_list>
     <property_options_list/>
 </properties>

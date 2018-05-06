@@ -1,5 +1,6 @@
 package actions;
 
+import algorithms.RandomClassifier;
 import dataprocessors.AppData;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.embed.swing.SwingFXUtils;
@@ -22,6 +23,8 @@ import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -51,6 +54,10 @@ public final class AppActions implements ActionComponent {
 
     private boolean isDataValid = false;
     private boolean isLoadedData = false;
+
+    public Path getDataFilePath() {
+        return dataFilePath;
+    }
 
     public void clearDataFilePath() {
         dataFilePath = null; }
@@ -112,6 +119,7 @@ public final class AppActions implements ActionComponent {
             try {
                 if (!isUnsaved.get() || promptToSave()) {
                     exitErrorHandlingHelper();
+                    return;
                 }
             } catch (IOException e) {
                 errorHandlingHelper();
@@ -377,11 +385,7 @@ public final class AppActions implements ActionComponent {
         ((AppUI) applicationTemplate.getUIComponent()).displayLeftPane();
         try {
             if (((AppUI) applicationTemplate.getUIComponent()).getRunningThread() != null) {
-                ((AppUI) applicationTemplate.getUIComponent()).getRandomClassifier().setStop(true);
-                ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setText(manager.getPropertyValue(RUN_BUTTON_TEXT.name()));
-                if (!(((AppUI) applicationTemplate.getUIComponent()).getRandomClassifier().tocontinue())) {
-                    ((AppUI) applicationTemplate.getUIComponent()).setRunningThread(null);
-                }
+                stopAlgorithm();
             }
             if (!isUnsaved.get() || promptToSave()) {
                 applicationTemplate.getDataComponent().clear();
@@ -404,16 +408,11 @@ public final class AppActions implements ActionComponent {
         }
     }
     private void loadRequestActions() {
-        PropertyManager manager = applicationTemplate.manager;
         try {
             if (!isUnsaved.get() || promptToSave()) {
                 if (load()) {
                     if (((AppUI) applicationTemplate.getUIComponent()).getRunningThread() != null) {
-                        ((AppUI) applicationTemplate.getUIComponent()).getRandomClassifier().setStop(true);
-                        ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setText(manager.getPropertyValue(RUN_BUTTON_TEXT.name()));
-                        if (!(((AppUI) applicationTemplate.getUIComponent()).getRandomClassifier().tocontinue())) {
-                            ((AppUI) applicationTemplate.getUIComponent()).setRunningThread(null);
-                        }
+                        stopAlgorithm();
                     }
                     if (isDataValid) {
                         ((AppUI) applicationTemplate.getUIComponent()).displayLeftPane();
@@ -437,6 +436,31 @@ public final class AppActions implements ActionComponent {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void stopAlgorithm() {
+        PropertyManager manager = applicationTemplate.manager;
+        for (Method method : ((AppUI) applicationTemplate.getUIComponent()).getAlgorithm().getClass().getDeclaredMethods()) {
+            if (method.getName().equals("setStop")) {
+                try {
+                    method.invoke(((AppUI) applicationTemplate.getUIComponent()).getAlgorithm(), true);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setText(manager.getPropertyValue(RUN_BUTTON_TEXT.name()));
+        for (Method method : ((AppUI) applicationTemplate.getUIComponent()).getAlgorithm().getClass().getDeclaredMethods()) {
+            if (method.getName().equals("getContinuousRun")) {
+                try {
+                    if (!((boolean) method.invoke(((AppUI) applicationTemplate.getUIComponent()).getAlgorithm()))) {
+                        ((AppUI) applicationTemplate.getUIComponent()).setRunningThread(null);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 }

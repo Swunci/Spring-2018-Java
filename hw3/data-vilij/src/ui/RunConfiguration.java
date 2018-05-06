@@ -44,17 +44,46 @@ public class RunConfiguration {
         return continuousRun;
     }
 
+    public int getNumOfLabels() { return labels; }
+
     public void setIterations(int value) {
+        if (value < 1) {
+            return;
+        }
         iterations = value;
     }
 
     public void setUpdateInterval(int value) {
+        if (value < 1) {
+            return;
+        }
         updateInterval = value;
     }
 
     public void setContinuousRun(boolean value) {
         continuousRun = value;
     }
+
+    public void setlabels(int value) {
+        if (value < 2 || value > 4) {
+            return;
+        }
+        labels= value;
+    }
+
+    public void setIterationsTF(int iterations) {
+        iterationsTF.setText(String.valueOf(iterations));
+    }
+
+    public void setUpdateIntervalTF(int updateInterval) {
+        updateIntervalTF.setText(String.valueOf(updateInterval));
+    }
+
+    public void setNumOfLabelsTF(int labels) {
+        numOfLabelsTF.setText(String.valueOf(labels));
+    }
+
+    public RunConfiguration(String test) {}
 
     public RunConfiguration() {
         PropertyManager manager = applicationTemplate.manager;
@@ -153,7 +182,7 @@ public class RunConfiguration {
                 try {
                     if (!newValue.trim().isEmpty()) {
                         Integer.parseInt(newValue);
-                        if (Integer.parseInt(newValue) < 1 || Integer.parseInt(newValue) > 4) {
+                        if (Integer.parseInt(newValue) < 2 || Integer.parseInt(newValue) > 4) {
                             numOfLabelsTF.setText(oldValue);
                         }
                         else {

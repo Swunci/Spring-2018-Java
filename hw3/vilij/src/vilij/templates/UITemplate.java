@@ -70,6 +70,9 @@ public class UITemplate implements UIComponent {
         setWindow(applicationTemplate);          // start the app window (without the application-specific workspace)
     }
 
+    public UITemplate() {
+    }
+
     @Override
     public Stage getPrimaryWindow() { return primaryStage; }
 

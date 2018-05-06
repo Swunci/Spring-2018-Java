@@ -18,7 +18,6 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Stack;
 
 import static settings.AppPropertyTypes.*;
@@ -57,6 +56,8 @@ public class AppData implements DataComponent {
     public void setNumOfLabels(int value) {
         numOfLabels = value;
     }
+
+    public AppData() {}
 
     public AppData(ApplicationTemplate applicationTemplate) {
         this.processor = new TSDProcessor();
@@ -144,6 +145,14 @@ public class AppData implements DataComponent {
         try (PrintWriter writer = new PrintWriter(Files.newOutputStream(dataFilePath))) {
             writer.write(((AppUI) applicationTemplate.getUIComponent()).getCurrentText());
             ((AppActions) applicationTemplate.getActionComponent()).getIsUnsaved().set(false);
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+        }
+    }
+
+    public void saveData(Path dataFilePath, String tsdString) {
+        try (PrintWriter writer = new PrintWriter(Files.newOutputStream(dataFilePath))) {
+            writer.write(tsdString);
         } catch (IOException e) {
             System.err.println(e.getMessage());
         }

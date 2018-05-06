@@ -1,20 +1,20 @@
 package ui;
 
 import actions.AppActions;
-import algorithms.RandomClassifier;
 import data.DataSet;
 import dataprocessors.AppData;
-import dataprocessors.TSDProcessor;
-import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -23,14 +23,20 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import settings.AppPropertyTypes;
 import vilij.propertymanager.PropertyManager;
 import vilij.templates.ApplicationTemplate;
 import vilij.templates.UITemplate;
 
-import javax.xml.crypto.Data;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.concurrent.locks.ReentrantLock;
+import java.lang.reflect.*;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import static settings.AppPropertyTypes.*;
 import static vilij.settings.PropertyTypes.*;
@@ -62,10 +68,17 @@ public final class AppUI extends UITemplate {
     private ObservableList<String> choices;
     private String scrnshotIconPath;
     private String settingsIconPath;
-    private ToggleGroup radioGroup;
-    private ArrayList<Button> classificationConfigs;
-    private ArrayList<Button> clusteringConfigs;
-    private RandomClassifier randomClassifier;
+    private ToggleGroup classificationRadioGroup = new ToggleGroup();
+    private ToggleGroup clusteringRadioGroup = new ToggleGroup();
+    private ArrayList<String> classificationAlgorithmNames;
+    private ArrayList<String> clusteringAlgorithmNames;
+    private RadioButton[] classificationRadioButton;
+    private RadioButton[] clusteringRadioButton;
+    private Button[] classificationConfigureButton;
+    private Button[] clusteringConfigureButton;
+    private ArrayList<String> classifierAlgorithmClassNames;
+    private ArrayList<String> clustererAlgorithmClassNames;
+    private Runnable algorithm = () -> {};
     private Thread runningThread;
 
     public Button getScrnshotButton() {
@@ -108,8 +121,8 @@ public final class AppUI extends UITemplate {
         return chart;
     }
 
-    public RandomClassifier getRandomClassifier() {
-        return randomClassifier;
+    public Runnable getAlgorithm() {
+        return algorithm;
     }
 
     public Thread getRunningThread() {
@@ -136,6 +149,10 @@ public final class AppUI extends UITemplate {
         algorithmTypes = choices;
     }
 
+    public void setTextArea(TextArea textArea) {
+        this.textArea = textArea;
+    }
+
     public void setInformationText(String information) {
         informationText.setText(information);
     }
@@ -144,9 +161,15 @@ public final class AppUI extends UITemplate {
         this.choices = choices;
     }
 
+    public void setAlgorithm(Runnable algorithm) {
+        this.algorithm = algorithm;
+    }
+
     public void setRunningThread(Thread runningThread) {
         this.runningThread = runningThread;
     }
+
+    public AppUI() { }
 
     public AppUI(Stage primaryStage, ApplicationTemplate applicationTemplate) {
         super(primaryStage, applicationTemplate);
@@ -215,29 +238,62 @@ public final class AppUI extends UITemplate {
         doneEditButton = new Button(manager.getPropertyValue(DONE_BUTTON_TEXT.name()));
         runButton = new Button(manager.getPropertyValue(RUN_BUTTON_TEXT.name()));
 
-        classificationConfigs = new ArrayList<>();
-        clusteringConfigs = new ArrayList<>();
+        classificationAlgorithmNames = new ArrayList<>();
+        Class appPropertyTypesClass = AppPropertyTypes.class;
+        for (Object o: appPropertyTypesClass.getEnumConstants()) {
+            if (!(o.toString().toLowerCase().equals(manager.getPropertyValue(CLASSIFICATION.name()).toLowerCase()))) {
+                if (o.toString().toLowerCase().contains(manager.getPropertyValue(CLASSIFICATION.name()).toLowerCase())) {
+                    classificationAlgorithmNames.add(manager.getPropertyValue(((Enum) o).name()));
+                }
+            }
+        }
 
-        Button classificationSB1 = new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
-        Button classificationSB2 = new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
-        Button classificationSB3 = new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
-        Button clusteringSB1 = new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
-        Button clusteringSB2 = new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
-        Button clusteringSB3 = new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
+        clusteringAlgorithmNames = new ArrayList<>();
+        for (Object o: appPropertyTypesClass.getEnumConstants()) {
+            if (!(o.toString().toLowerCase().equals(manager.getPropertyValue(CLUSTERING.name()).toLowerCase()))) {
+                if (o.toString().toLowerCase().contains(manager.getPropertyValue(CLUSTERING.name()).toLowerCase())) {
+                    clusteringAlgorithmNames.add(manager.getPropertyValue(((Enum) o).name()));
+                }
+            }
+        }
 
-        classificationSB1.setUserData(new RunConfiguration());
-        classificationSB2.setUserData(new RunConfiguration());
-        classificationSB3.setUserData(new RunConfiguration());
-        clusteringSB1.setUserData(new RunConfiguration());
-        clusteringSB2.setUserData(new RunConfiguration());
-        clusteringSB3.setUserData(new RunConfiguration());
+        classificationRadioButton = new RadioButton[classificationAlgorithmNames.size()];
+        classificationConfigureButton = new Button[classificationAlgorithmNames.size()];
+        for (int i = 0; i < classificationAlgorithmNames.size(); i++) {
+            classificationRadioButton[i] = new RadioButton(classificationAlgorithmNames.get(i));
+            classificationConfigureButton[i] = new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
+            classificationConfigureButton[i].setUserData(new RunConfiguration());
+            classificationRadioButton[i].setUserData(classificationConfigureButton[i]);
+            classificationRadioButton[i].setToggleGroup(classificationRadioGroup);
+        }
 
-        classificationConfigs.add(classificationSB1);
-        classificationConfigs.add(classificationSB2);
-        classificationConfigs.add(classificationSB3);
-        clusteringConfigs.add(clusteringSB1);
-        clusteringConfigs.add(clusteringSB2);
-        clusteringConfigs.add(clusteringSB3);
+        clusteringRadioButton = new RadioButton[clusteringAlgorithmNames.size()];
+        clusteringConfigureButton = new Button[clusteringAlgorithmNames.size()];
+        for (int i = 0; i < clusteringAlgorithmNames.size(); i++) {
+            clusteringRadioButton[i] = new RadioButton(clusteringAlgorithmNames.get(i));
+            clusteringConfigureButton[i] = new Button(null, new ImageView(new Image(getClass().getResourceAsStream(settingsIconPath))));
+            clusteringConfigureButton[i].setUserData(new RunConfiguration());
+            clusteringRadioButton[i].setUserData(clusteringConfigureButton[i]);
+            clusteringRadioButton[i].setToggleGroup(clusteringRadioGroup);
+        }
+
+        classifierAlgorithmClassNames = new ArrayList<>();
+        for (Object o: appPropertyTypesClass.getEnumConstants()) {
+            if (!(o.toString().toLowerCase().equals(manager.getPropertyValue(CLASSIFIER.name()).toLowerCase()))) {
+                if (o.toString().toLowerCase().contains(manager.getPropertyValue(CLASSIFIER.name()).toLowerCase())) {
+                    classifierAlgorithmClassNames.add(manager.getPropertyValue(((Enum) o).name()));
+                }
+            }
+        }
+
+        clustererAlgorithmClassNames = new ArrayList<>();
+        for (Object o: appPropertyTypesClass.getEnumConstants()) {
+            if (!(o.toString().toLowerCase().equals(manager.getPropertyValue(CLUSTERER.name()).toLowerCase()))) {
+                if (o.toString().toLowerCase().contains(manager.getPropertyValue(CLUSTERER.name()).toLowerCase())) {
+                    clustererAlgorithmClassNames.add(manager.getPropertyValue(((Enum) o).name()));
+                }
+            }
+        }
 
         leftPane = new VBox();
 
@@ -278,8 +334,6 @@ public final class AppUI extends UITemplate {
 
         rightPane.setAlignment(Pos.CENTER);
         rightPane.getChildren().addAll(chart);
-
-        radioGroup = new ToggleGroup();
 
         leftPane.setVisible(false);
         runButton.setVisible(false);
@@ -410,54 +464,40 @@ public final class AppUI extends UITemplate {
                 if (newValue != null) {
                     PropertyManager manager = applicationTemplate.manager;
                     if (newValue.toString().equals(manager.getPropertyValue(CLASSIFICATION.name()))) {
+                        classificationRadioGroup.selectToggle(null);
                         runButton.setVisible(false);
                         selectionPane.getChildren().clear();
                         VBox options = new VBox();
                         VBox settings = new VBox();
 
-                        RadioButton rb1 = new RadioButton(manager.getPropertyValue(CLASSIFICATION_ALGORITHM_NAME_1.name()));
-                        RadioButton rb2 = new RadioButton(manager.getPropertyValue(CLASSIFICATION_ALGORITHM_NAME_2.name()));
-                        RadioButton rb3 = new RadioButton(manager.getPropertyValue(CLASSIFICATION_ALGORITHM_NAME_3.name()));
-                        rb1.setUserData(classificationConfigs.get(0));
-                        rb2.setUserData(classificationConfigs.get(1));
-                        rb3.setUserData(classificationConfigs.get(2));
-                        rb1.setToggleGroup(radioGroup);
-                        rb2.setToggleGroup(radioGroup);
-                        rb3.setToggleGroup(radioGroup);
-                        options.getChildren().addAll(rb1, rb2, rb3);
+                        for (int i = 0; i < classificationAlgorithmNames.size(); i++) {
+                            options.getChildren().add(classificationRadioButton[i]);
+                            settings.getChildren().add(classificationConfigureButton[i]);
+                        }
+
                         options.setPadding(new Insets(10, 0, 10, 0));
                         options.setSpacing(12);
 
-                        for (Button button : classificationConfigs) {
-                            settings.getChildren().add(button);
-                        }
                         options.setPadding(new Insets(5, 0, 10, 0));
                         settings.setSpacing(5);
 
                         selectionPane.getChildren().addAll(options, settings);
 
                     } else if (newValue.toString().equals(manager.getPropertyValue(CLUSTERING.name()))) {
+                        clusteringRadioGroup.selectToggle(null);
                         runButton.setVisible(false);
                         selectionPane.getChildren().clear();
                         VBox options = new VBox();
                         VBox settings = new VBox();
 
-                        RadioButton rb1 = new RadioButton(manager.getPropertyValue(CLUSTERING_ALGORITHM_NAME_1.name()));
-                        RadioButton rb2 = new RadioButton(manager.getPropertyValue(CLUSTERING_ALGORITHM_NAME_2.name()));
-                        RadioButton rb3 = new RadioButton(manager.getPropertyValue(CLUSTERING_ALGORITHM_NAME_3.name()));
-                        rb1.setUserData(clusteringConfigs.get(0));
-                        rb2.setUserData(clusteringConfigs.get(1));
-                        rb3.setUserData(clusteringConfigs.get(2));
-                        rb1.setToggleGroup(radioGroup);
-                        rb2.setToggleGroup(radioGroup);
-                        rb3.setToggleGroup(radioGroup);
-                        options.getChildren().addAll(rb1, rb2, rb3);
+                        for (int i = 0; i < clusteringAlgorithmNames.size(); i++) {
+                            options.getChildren().add(clusteringRadioButton[i]);
+                            settings.getChildren().add(clusteringConfigureButton[i]);
+                        }
+
                         options.setPadding(new Insets(10, 0, 10, 0));
                         options.setSpacing(12);
 
-                        for (Button button : clusteringConfigs) {
-                            settings.getChildren().add(button);
-                        }
                         options.setPadding(new Insets(5, 0, 10, 0));
                         settings.setSpacing(5);
 
@@ -469,10 +509,19 @@ public final class AppUI extends UITemplate {
     }
 
     private void setAlgorithmButtonActions() {
-        radioGroup.selectedToggleProperty().addListener(new ChangeListener<Toggle>() {
+        classificationRadioGroup.selectedToggleProperty().addListener(new ChangeListener<Toggle>() {
             @Override
             public void changed(ObservableValue<? extends Toggle> observable, Toggle oldValue, Toggle newValue) {
-                if (radioGroup.getSelectedToggle() != null) {
+                if (classificationRadioGroup.getSelectedToggle() != null) {
+                    runButton.setVisible(true);
+                    runButton.setDisable(false);
+                }
+            }
+        });
+        clusteringRadioGroup.selectedToggleProperty().addListener(new ChangeListener<Toggle>() {
+            @Override
+            public void changed(ObservableValue<? extends Toggle> observable, Toggle oldValue, Toggle newValue) {
+                if (clusteringRadioGroup.getSelectedToggle() != null) {
                     runButton.setVisible(true);
                     runButton.setDisable(false);
                 }
@@ -481,7 +530,7 @@ public final class AppUI extends UITemplate {
     }
 
     private void setSettingsButtonActions() {
-        for (Button button: classificationConfigs) {
+        for (Button button: classificationConfigureButton) {
             button.setOnAction(event -> {
                 RunConfiguration setting = (RunConfiguration) button.getUserData();
                 setting.displayRunConfiguration();
@@ -489,7 +538,7 @@ public final class AppUI extends UITemplate {
             });
         }
 
-        for (Button button: clusteringConfigs) {
+        for (Button button: clusteringConfigureButton) {
             button.setOnAction(event -> {
                 RunConfiguration setting = (RunConfiguration) button.getUserData();
                 setting.displayRunConfiguration();
@@ -499,61 +548,147 @@ public final class AppUI extends UITemplate {
 
     private void setRunButtonActions() {
         runButton.setOnAction(event -> {
-            // TODO: Running the algorithm
-            runButton.setDisable(true);
-            doneEditButton.setDisable(true);
-            algorithmTypePane.setDisable(true);
-            selectionPane.setDisable(true);
             PropertyManager manager = applicationTemplate.manager;
             runButton.setText(manager.getPropertyValue(RUN_BUTTON_TEXT.name()));
-            int maxIterations = ((RunConfiguration) ((Button) radioGroup.getSelectedToggle().getUserData()).getUserData()).getInterations();
-            int updateInterval = ((RunConfiguration) ((Button) radioGroup.getSelectedToggle().getUserData()).getUserData()).getUpdateInterval();
-            boolean tocontinue = ((RunConfiguration) ((Button) radioGroup.getSelectedToggle().getUserData()).getUserData()).getContinuousRun();
-            DataSet dataSet = new DataSet();
-            try {
-                String[] lines = textArea.getText().split("\n");
-                for (String line : lines) {
-                    dataSet.addInstance(line);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
             if (algorithmTypes.getSelectionModel().getSelectedItem().toString().equals(manager.getPropertyValue(CLASSIFICATION.name()))) {
-                if (tocontinue) {
-                    scrnshotButton.setDisable(true);
-                    randomClassifier = new RandomClassifier(dataSet, maxIterations, updateInterval, tocontinue);
-                    runningThread = new Thread(randomClassifier);
-                    runningThread.setDaemon(true);
-                    runningThread.start();
-                    Task<Void> task = new Task<Void>() {
-                        @Override
-                        protected Void call() throws Exception {
-                            while (runningThread.isAlive()) {
-                            }
-                            return null;
+                boolean tocontinue = ((RunConfiguration) ((Button) classificationRadioGroup.getSelectedToggle().getUserData()).getUserData()).getContinuousRun();
+                int maxIterations = ((RunConfiguration) ((Button) classificationRadioGroup.getSelectedToggle().getUserData()).getUserData()).getInterations();
+                int updateInterval = ((RunConfiguration) ((Button) classificationRadioGroup.getSelectedToggle().getUserData()).getUserData()).getUpdateInterval();
+                DataSet dataSet = new DataSet();
+                if ((!((AppActions) applicationTemplate.getActionComponent()).getIsLoadedData())) {
+                    try {
+                        String[] lines = textArea.getText().split("\n");
+                        for (String line : lines) {
+                            dataSet.addInstance(line);
                         }
-                    };
-                    task.setOnSucceeded(e -> {
-                        runButton.setDisable(false);
-                    });
-                    new Thread(task).start();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
                 else {
-                    if (runningThread == null) {
-                        randomClassifier = new RandomClassifier(dataSet, maxIterations, updateInterval, tocontinue);
-                        runningThread = new Thread(randomClassifier);
-                        runningThread.setDaemon(true);
-                        runningThread.start();
-                    }
-                    else {
-                        synchronized (runningThread) {
-                            runningThread.notify();
-                        }
+                    try {
+                        dataSet = DataSet.fromTSDFile(((AppActions) applicationTemplate.getActionComponent()).getDataFilePath());
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
                 }
+
+                for (int i = 0; i < classifierAlgorithmClassNames.size(); i++) {
+                    String[] values = classifierAlgorithmClassNames.get(i).split("\\.");
+                    if (classificationRadioGroup.getSelectedToggle().toString().replaceAll("\\s+", "").toLowerCase().contains(values[1].toLowerCase())) {
+                        try {
+                            Class<?> klass = Class.forName(classifierAlgorithmClassNames.get(i));
+                            Constructor konstructor = klass.getConstructors()[0];
+                            if (runningThread == null) {
+                                algorithm = (Runnable) konstructor.newInstance(dataSet, maxIterations, updateInterval, tocontinue);
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
+                        disableUI();
+
+                        if (tocontinue) {
+                            runningThread = new Thread(algorithm);
+                            runningThread.setDaemon(true);
+                            scrnshotButton.setDisable(true);
+                            runningThread.start();
+                            Task<Void> task = new Task<Void>() {
+                                @Override
+                                protected Void call() throws Exception {
+                                    while (runningThread.isAlive()) {
+                                    }
+                                    return null;
+                                }
+                            };
+                            task.setOnSucceeded(e -> {
+                                runButton.setDisable(false);
+                            });
+                            new Thread(task).start();
+                        } else {
+                            if (runningThread == null) {
+                                runningThread = new Thread(algorithm);
+                                runningThread.setDaemon(true);
+                                runningThread.start();
+                            } else {
+                                synchronized (runningThread) {
+                                    runningThread.notify();
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+
             }
+
             else if (algorithmTypes.getSelectionModel().getSelectedItem().toString().equals(manager.getPropertyValue(CLUSTERING.name()))) {
-                // TODO: Clustering run actions
+                int maxIterations = ((RunConfiguration) ((Button) clusteringRadioGroup.getSelectedToggle().getUserData()).getUserData()).getInterations();
+                int updateInterval = ((RunConfiguration) ((Button) clusteringRadioGroup.getSelectedToggle().getUserData()).getUserData()).getUpdateInterval();
+                boolean tocontinue = ((RunConfiguration) ((Button) clusteringRadioGroup.getSelectedToggle().getUserData()).getUserData()).getContinuousRun();
+                int numOfLabels = ((RunConfiguration) ((Button) clusteringRadioGroup.getSelectedToggle().getUserData()).getUserData()).getNumOfLabels();
+                DataSet dataSet = new DataSet();
+                if ((!((AppActions) applicationTemplate.getActionComponent()).getIsLoadedData())) {
+                    try {
+                        String[] lines = textArea.getText().split("\n");
+                        for (String line : lines) {
+                            dataSet.addInstance(line);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                else {
+                    try {
+                        dataSet = DataSet.fromTSDFile(((AppActions) applicationTemplate.getActionComponent()).getDataFilePath());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                for (int i = 0; i < clustererAlgorithmClassNames.size(); i++) {
+                    String[] values = clustererAlgorithmClassNames.get(i).split("\\.");
+                    if (clusteringRadioGroup.getSelectedToggle().toString().replaceAll("\\s+", "").toLowerCase().contains(values[1].toLowerCase())) {
+                        try {
+                            Class<?> klass = Class.forName(clustererAlgorithmClassNames.get(i));
+                            Constructor konstructor = klass.getConstructors()[0];
+                            if (runningThread == null) {
+                                algorithm = (Runnable) konstructor.newInstance(dataSet, maxIterations, updateInterval, numOfLabels, tocontinue);
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        disableUI();
+                        if (tocontinue) {
+                            runningThread = new Thread(algorithm);
+                            runningThread.setDaemon(true);
+                            scrnshotButton.setDisable(true);
+                            runningThread.start();
+                            Task<Void> task = new Task<Void>() {
+                                @Override
+                                protected Void call() throws Exception {
+                                    while (runningThread.isAlive()) {
+                                    }
+                                    return null;
+                                }
+                            };
+                            task.setOnSucceeded(e -> {
+                                runButton.setDisable(false);
+                            });
+                            new Thread(task).start();
+                        } else {
+                            if (runningThread == null) {
+                                runningThread = new Thread(algorithm);
+                                runningThread.setDaemon(true);
+                                runningThread.start();
+                            } else {
+                                synchronized (runningThread) {
+                                    runningThread.notify();
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
             }
         });
     }
@@ -574,11 +709,40 @@ public final class AppUI extends UITemplate {
             chart.getData().clear();
             AppData dataComponent = (AppData) applicationTemplate.getDataComponent();
             dataComponent.clear();
-            dataComponent.loadData(textArea.getText());
+            if ((!((AppActions) applicationTemplate.getActionComponent()).getIsLoadedData())) {
+                dataComponent.loadData(textArea.getText());
+            }
+            else {
+                File file = ((AppActions) applicationTemplate.getActionComponent()).getDataFilePath().toFile();
+                BufferedReader br = new BufferedReader(new FileReader(file));
+                String input;
+                while ((input = br.readLine()) != null) {
+                    ((AppData) applicationTemplate.getDataComponent()).getTSDProcessor().processString(input);
+                }
+            }
             dataComponent.displayData();
             ((AppData) applicationTemplate.getDataComponent()).getTSDProcessor().updateLine();
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    public void updateChart(Map<String, String> dataLabels, Map<String, Point2D> dataPoints) {
+        chart.getData().clear();
+        AppData dataComponent = (AppData) applicationTemplate.getDataComponent();
+        dataComponent.clear();
+        Set<String> labels = new HashSet<>(dataLabels.values());
+        for (String label : labels) {
+            XYChart.Series<Number, Number> series = new XYChart.Series<>();
+            series.setName(label);
+            dataLabels.entrySet().stream().filter(entry -> entry.getValue().equals(label)).forEach(entry -> {
+                Point2D point = dataPoints.get(entry.getKey());
+                XYChart.Data<Number, Number> seriesData = new XYChart.Data<>(point.getX(), point.getY());
+                series.getData().add(seriesData);
+            });
+            chart.getData().add(series);
+            Node line = series.getNode().lookup(".chart-series-line");
+            line.setStyle("-fx-stroke: transparent;");
         }
     }
 
@@ -594,5 +758,23 @@ public final class AppUI extends UITemplate {
         runButton.setDisable(false);
         algorithmTypePane.setDisable(false);
         selectionPane.setDisable(false);
+    }
+
+    public void disableUI() {
+        runButton.setDisable(true);
+        doneEditButton.setDisable(true);
+        algorithmTypePane.setDisable(true);
+        selectionPane.setDisable(true);
+    }
+
+    public void algorithmFinished() {
+        ((AppUI) applicationTemplate.getUIComponent()).setRunningThread(null);
+        ((AppUI) applicationTemplate.getUIComponent()).getRunButton().setDisable(false);
+        if (!((AppActions) applicationTemplate.getActionComponent()).getIsLoadedData()) {
+            ((AppUI) applicationTemplate.getUIComponent()).getDoneEditButton().setDisable(false);
+        }
+        ((AppUI) applicationTemplate.getUIComponent()).getScrnshotButton().setDisable(false);
+        ((AppUI) applicationTemplate.getUIComponent()).getAlgorithmTypePane().setDisable(false);
+        ((AppUI) applicationTemplate.getUIComponent()).getSelectionPane().setDisable(false);
     }
 }
